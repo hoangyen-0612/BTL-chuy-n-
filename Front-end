@@ -75,3 +75,80 @@
                 </a>
             </nav>
         </aside>
+            <div id="medicines" class="section ">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Quản lý danh mục thuốc</h2>
+                    <button onclick="openMedicineModal()" class="gradient-bg text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+                        <i class="fas fa-plus mr-2"></i>Thêm thuốc mới
+                    </button>
+                </div>
+
+                <!-- Search and Filter -->
+                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input type="text" placeholder="Tìm kiếm thuốc..." class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <select class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option>Tất cả loại thuốc</option>
+                            <option>Thuốc kê đơn</option>
+                            <option>Thuốc không kê đơn</option>
+                            <option>Thực phẩm chức năng</option>
+                        </select>
+                        <select class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option>Tất cả nhà sản xuất</option>
+                            <option>Traphaco</option>
+                            <option>Hau Giang Pharma</option>
+                            <option>Domesco</option>
+                        </select>
+                        <button class="gradient-bg text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+                            <i class="fas fa-search mr-2"></i>Tìm kiếm
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Medicines Table -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã thuốc</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên thuốc</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giá bán</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tồn kho</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hạn sử dụng</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="medicinesTableBody">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">MED001</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Paracetamol 500mg</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Không kê đơn</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">15,000₫</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">250 hộp</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">12/2025</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button class="text-blue-600 hover:text-blue-900 mr-3">Sửa</button>
+                                    <button class="text-red-600 hover:text-red-900">Xóa</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">MED002</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Amoxicillin 250mg</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Kê đơn</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">45,000₫</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">120 hộp</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">08/2025</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button class="text-blue-600 hover:text-blue-900 mr-3">Sửa</button>
+                                    <button class="text-red-600 hover:text-red-900">Xóa</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
