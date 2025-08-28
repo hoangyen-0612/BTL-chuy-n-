@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form method="post" action="process.php">
+        <label for="number1">Số thứ nhất:</label>
+        <input type="text" id="number1" name="number1"><br><br>
+        
+        <label for="number2">Số thứ hai:</label>
+        <input type="text" id="number2" name="number2"><br><br>
+        
+        <input type="submit" value="Gửi">
+    </form>
+    <?php
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $number1 = floatval($_POST["number1"]);
+            $number2 = floatval($_POST["number2"]);
+            
+            echo "Số thứ nhất: " . $number1 . "<br>";
+            echo "Số thứ hai: " . $number2 . "<br>";
+        }
+    ?>
+</body>
+</html>

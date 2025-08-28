@@ -1,0 +1,38 @@
+.img11{
+    display: flex;
+    flex: 1;
+    padding: 100px 20px 30px 20px;
+    box-sizing: border-box;
+    border: 1px solid black;
+}
+.cah{
+    display: flex;
+    flex: 1;
+    padding: 0px 60px 0px ;
+    box-sizing: border-box;
+}
+.c1,.c2{
+    width: 260px ;
+    height: 30px;
+    display: flex;
+    flex: 1;
+    padding: 5px 40px 5px ;
+    font-size: 16px;
+}
+.c2{
+    color: white;
+    text-align: justify;
+}
+body{
+    background-color: black;
+}
+.h1{
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    color: rgb(226, 87, 37);
+    font-size: 20px;
+    
+}
+.des{
+    background-color: rgb(70, 66, 66);
+
+}

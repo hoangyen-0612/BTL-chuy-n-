@@ -1,0 +1,44 @@
+#loginform{
+    border: none;
+    color: aliceblue;
+    width: 400px;
+    height: 300px;
+    display: none;
+    background-color: rgb(6, 6, 6);
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+    margin-bottom: 20px;
+    bottom: 40px;
+    max-width: 400px;
+}
+.head{
+    text-align: center;
+}
+.finput{
+    position: absolute;
+    font-family: 'Times New Roman', Times, serif;
+    background:black;
+     border: 0;
+    outline: 0;
+    color: white;
+   
+}
+.dangnhap{
+    display: none;
+}
+.forms{
+    padding: 20px 20px 20px;
+    width: 200px;
+    border-bottom: 1px solid white;
+}
+.formsubmit{
+    justify-content: center;
+    margin-top: 30px;
+}
+.finput::placeholder{
+    color: white;
+    font-size: 15px;
+ }
+
+
