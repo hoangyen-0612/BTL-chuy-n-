@@ -285,7 +285,87 @@
                         <i class="fas fa-plus mr-2"></i>Thêm nhân viên
                     </button>
                 </div>
+ <!-- Inventory Section -->
+            <div id="inventory" class="section hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Quản lý kho</h2>
+                    <button onclick="openInventoryModal()" class="gradient-bg text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+                        <i class="fas fa-plus mr-2"></i>Nhập kho
+                    </button>
+                </div>
 
+                <!-- Inventory Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Tổng giá trị kho</p>
+                                <p class="text-2xl font-bold text-gray-900">2,450,000,000₫</p>
+                            </div>
+                            <i class="fas fa-warehouse text-3xl text-blue-500"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Sản phẩm sắp hết</p>
+                                <p class="text-2xl font-bold text-orange-600">23</p>
+                            </div>
+                            <i class="fas fa-exclamation-triangle text-3xl text-orange-500"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Sản phẩm hết hạn</p>
+                                <p class="text-2xl font-bold text-red-600">5</p>
+                            </div>
+                            <i class="fas fa-calendar-times text-3xl text-red-500"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Table -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Danh sách tồn kho</h3>
+                    </div>
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên thuốc</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lô</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tồn kho</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đã bán</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hạn sử dụng</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Paracetamol 500mg</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">LOT001</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">250</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">150</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">12/2025</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Bình thường</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Vitamin C 1000mg</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">LOT002</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">15</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">85</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">06/2025</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">Sắp hết</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 </body>
 </html>
 
