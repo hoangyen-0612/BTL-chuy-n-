@@ -117,3 +117,73 @@
                             <span class="text-gray-500 ml-2">so với hôm qua</span>
                         </div>
                     </div>
+<div class="bg-white rounded-xl shadow-md p-6 card-hover transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Thuốc sắp hết</p>
+                                <p class="text-2xl font-bold text-gray-900">23</p>
+                            </div>
+                            <div class="status-warning p-3 rounded-full">
+                                <i class="fas fa-exclamation-triangle text-white text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-orange-600 font-medium">Cần nhập thêm</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-md p-6 card-hover transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Thuốc hết hạn</p>
+                                <p class="text-2xl font-bold text-gray-900">5</p>
+                            </div>
+                            <div class="status-danger p-3 rounded-full">
+                                <i class="fas fa-calendar-times text-white text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                            <span class="text-red-600 font-medium">Cần xử lý ngay</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Hoạt động gần đây</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600">Bán thuốc Paracetamol - 15:30</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600">Nhập kho Vitamin C - 14:20</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600">Cảnh báo thuốc sắp hết - 13:45</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Thuốc bán chạy</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Paracetamol 500mg</span>
+                                <span class="text-sm font-medium text-gray-900">45 hộp</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Vitamin C 1000mg</span>
+                                <span class="text-sm font-medium text-gray-900">32 lọ</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Amoxicillin 250mg</span>
+                                <span class="text-sm font-medium text-gray-900">28 hộp</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
