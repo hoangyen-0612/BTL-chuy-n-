@@ -1,11 +1,11 @@
 <?php
 
-// Hàm định dạng tiền tệ
+// Hàm định dạng tiền VND
 function formatCurrency($amount) {
     return number_format($amount, 0, ',', '.') . ' VNĐ';
 }
 
-// Hàm lấy class cho trạng thái
+// Hàm trạng thái của đơn hàng
 function getStatusClass($status) {
     switch ($status) {
         case 'Đã giao hàng':
@@ -172,4 +172,5 @@ function getStatusClass($status) {
     </script>
 </body>
 </html>
+
 
