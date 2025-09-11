@@ -1,183 +1,227 @@
 <?php
-// --- PHẦN PHP XỬ LÝ ---
-// Kết nối database
-$host = 'localhost';
-$dbname = 'pharmacy_db';
-$username = 'root';
-$password = '';
+include("connect.php");
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Kết nối database thất bại: " . $e->getMessage());
-}
+// Xử lý thêm, sửa
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $action    = $_POST['action'];
+    $soDon     = $_POST['so_don_dat'] ?? '';
+    $ngayDat   = $_POST['ngay_dat'] ?? '';
+    $maKhach   = $_POST['ma_khach'] ?? '';
+    $maThuoc   = $_POST['ma_thuoc'] ?? '';
+    $soLuong   = intval($_POST['so_luong'] ?? 0);
+    $giaBan    = floatval($_POST['gia_ban'] ?? 0);
+    $thanhTien = $soLuong * $giaBan;
+    $trangThai = $_POST['trang_thai'] ?? 'Chờ xử lý';
 
-// Hàm xử lý input
-function sanitizeInput($data) {
-    return htmlspecialchars(stripslashes(trim($data)));
-}
+    if ($action == 'them') {
+        // Tự động sinh mã đơn đặt
+        $res = $conn->query("SELECT so_don_dat FROM dondat ORDER BY so_don_dat DESC LIMIT 1");
+        if ($res && $res->num_rows > 0) {
+            $last = $res->fetch_assoc()['so_don_dat'];
+            $num  = (int)substr($last, 2) + 1;
+            $soDon = "DD" . str_pad($num, 3, "0", STR_PAD_LEFT);
+        } else {
+            $soDon = "DD001";
+        }
 
-// Hàm định dạng tiền tệ
-function formatCurrency($amount) {
-    return number_format($amount, 0, ',', '.') . ' VNĐ';
-}
+        $stmt = $conn->prepare("INSERT INTO dondat 
+            (so_don_dat, ngay_dat, ma_khach, ma_thuoc, so_luong, gia_ban, thanh_tien, trang_thai) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssidds", $soDon, $ngayDat, $maKhach, $maThuoc,
+                          $soLuong, $giaBan, $thanhTien, $trangThai);
+        $stmt->execute();
+        header("Location: don-dat.php");
+        exit;
+    }
 
-// Hàm lấy class cho trạng thái
-function getStatusClass($status) {
-    switch ($status) {
-        case 'Đã giao hàng':
-            return 'status-delivered';
-        case 'Đang giao hàng':
-            return 'status-shipping';
-        case 'Đang xử lý':
-            return 'status-processing';
-        case 'Chờ xác nhận':
-            return 'status-pending';
-        default:
-            return 'status-default';
+    if ($action == 'sua') {
+        $stmt = $conn->prepare("UPDATE dondat 
+            SET ngay_dat=?, ma_khach=?, ma_thuoc=?, so_luong=?, gia_ban=?, thanh_tien=?, trang_thai=? 
+            WHERE so_don_dat=?");
+        $stmt->bind_param("sssiddss", $ngayDat, $maKhach, $maThuoc,
+                          $soLuong, $giaBan, $thanhTien, $trangThai, $soDon);
+        $stmt->execute();
     }
 }
 
-// Xử lý form thêm đơn hàng
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
-    $customer_name = sanitizeInput($_POST['customer_name']);
-    $customer_phone = sanitizeInput($_POST['customer_phone']);
-    $customer_address = sanitizeInput($_POST['customer_address']);
-    $medicines = sanitizeInput($_POST['medicines']);
-    $total_amount = (float)$_POST['total_amount'];
-    $status = sanitizeInput($_POST['status']);
-    
-    try {
-        $stmt = $pdo->prepare("INSERT INTO orders (customer_name, customer_phone, customer_address, medicines, total_amount, status) 
-                              VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$customer_name, $customer_phone, $customer_address, $medicines, $total_amount, $status]);
-        $success_message = "Thêm đơn hàng thành công!";
-    } catch (PDOException $e) {
-        $error_message = "Lỗi khi thêm đơn hàng: " . $e->getMessage();
-    }
+// Xử lý xóa
+if (isset($_GET['xoa'])) {
+    $soDon = $_GET['xoa'];
+    $stmt = $conn->prepare("DELETE FROM dondat WHERE so_don_dat=?");
+    $stmt->bind_param("s", $soDon);
+    $stmt->execute();
 }
+// Lấy danh sách đơn đặt
+$sql = "SELECT dd.*, kh.ten_khach_hang, t.ten_thuoc, t.gia_ban
+        FROM dondat dd
+        JOIN khachhang kh ON dd.ma_khach = kh.ma_khach
+        JOIN thuoc t ON dd.ma_thuoc = t.ma_thuoc
+        ORDER BY dd.so_don_dat DESC";
+$result = $conn->query($sql);
 
-// Xử lý cập nhật trạng thái
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
-    $order_id = (int)$_POST['order_id'];
-    $new_status = sanitizeInput($_POST['new_status']);
-    
-    try {
-        $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
-        $stmt->execute([$new_status, $order_id]);
-        $success_message = "Cập nhật trạng thái thành công!";
-    } catch (PDOException $e) {
-        $error_message = "Lỗi khi cập nhật trạng thái: " . $e->getMessage();
-    }
-}
-
-// Xử lý xóa đơn hàng
-if (isset($_GET['delete_id'])) {
-    $delete_id = (int)$_GET['delete_id'];
-    
-    try {
-        $stmt = $pdo->prepare("DELETE FROM orders WHERE id = ?");
-        $stmt->execute([$delete_id]);
-        $success_message = "Xóa đơn hàng thành công!";
-    } catch (PDOException $e) {
-        $error_message = "Lỗi khi xóa đơn hàng: " . $e->getMessage();
-    }
-}
-
-// Lấy danh sách đơn hàng
-try {
-    $search_keyword = isset($_GET['search']) ? sanitizeInput($_GET['search']) : '';
-    
-    if ($search_keyword) {
-        $stmt = $pdo->prepare("SELECT * FROM orders 
-                              WHERE customer_name LIKE ? OR customer_phone LIKE ? OR medicines LIKE ?
-                              ORDER BY order_date DESC");
-        $search_param = "%$search_keyword%";
-        $stmt->execute([$search_param, $search_param, $search_param]);
-    } else {
-        $stmt = $pdo->query("SELECT * FROM orders ORDER BY order_date DESC");
-    }
-    
-    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    die("Lỗi khi lấy dữ liệu đơn hàng: " . $e->getMessage());
-}
+// Lấy danh sách khách hàng + thuốc
+$khach_list = $conn->query("SELECT * FROM khachhang");
+$thuoc_list = $conn->query("SELECT * FROM thuoc");
 ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quản lý đơn hàng</title>
+    <title>Quản lý đơn đặt</title>
+    <link rel="stylesheet" href="css.css">
     <style>
-        .status-delivered { color: green; }
-        .status-shipping { color: orange; }
-        .status-processing { color: blue; }
-        .status-pending { color: gray; }
-        .status-default { color: black; }
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+               background:rgba(0,0,0,0.5);justify-content:center;align-items:center;}
+        .modal-content{background:#fff;padding:20px;border-radius:8px;width:500px;}
+        .close{float:right;cursor:pointer;}
     </style>
+    <script>
+        function moModal(id){ document.getElementById(id).style.display="flex"; }
+        function dongModal(id){ document.getElementById(id).style.display="none"; }
+
+        function capNhatGia(select, prefix){
+            let gia = select.options[select.selectedIndex].getAttribute("data-gia");
+            document.getElementById(prefix+"-gia").value = gia;
+            tinhTien(prefix);
+        }
+        function tinhTien(prefix){
+            let sl  = document.getElementById(prefix+"-sl").value || 0;
+            let gia = document.getElementById(prefix+"-gia").value || 0;
+            document.getElementById(prefix+"-thanhtien").value = sl * gia;
+        }
+        function timKiem(){
+            let kw = document.getElementById("searchInput").value.toLowerCase();
+            document.querySelectorAll("#donDatTable tbody tr").forEach(row=>{
+                row.style.display = row.textContent.toLowerCase().includes(kw) ? "" : "none";
+            });
+        }
+        function suaDonDat(so, ngay, kh, thuoc, sl, gia, tt){
+            document.getElementById('edit-so').value = so;
+            document.getElementById('edit-ngay').value = ngay;
+            document.getElementById('edit-kh').value = kh;
+            document.getElementById('edit-thuoc').value = thuoc;
+            document.getElementById('edit-sl').value = sl;
+            document.getElementById('edit-gia').value = gia;
+            document.getElementById('edit-thanhtien').value = sl*gia;
+            document.getElementById('edit-trangthai').value = tt;
+            moModal('modal-sua');
+        }
+    </script>
 </head>
 <body>
-    <h1>Thêm đơn hàng mới</h1>
-    <?php if (isset($success_message)) echo "<p style='color:green;'>$success_message</p>"; ?>
-    <?php if (isset($error_message)) echo "<p style='color:red;'>$error_message</p>"; ?>
-    <form method="post" action="">
-        <input type="text" name="customer_name" placeholder="Tên khách hàng" required><br>
-        <input type="text" name="customer_phone" placeholder="Số điện thoại" required><br>
-        <textarea name="customer_address" placeholder="Địa chỉ"></textarea><br>
-        <textarea name="medicines" placeholder="Thuốc"></textarea><br>
-        <input type="number" step="0.01" name="total_amount" placeholder="Tổng tiền" required><br>
-        <select name="status">
-            <option value="Chờ xác nhận">Chờ xác nhận</option>
-            <option value="Đang xử lý">Đang xử lý</option>
-            <option value="Đang giao hàng">Đang giao hàng</option>
-            <option value="Đã giao hàng">Đã giao hàng</option>
-        </select><br>
-        <button type="submit" name="add_order">Thêm đơn hàng</button>
-    </form>
+    <div class="page-header">
+        <h1 class="page-title">Quản lý đơn đặt</h1>
+    </div>
 
-    <h1>Danh sách đơn hàng</h1>
-    <form method="get" action="">
-        <input type="text" name="search" placeholder="Tìm kiếm..." value="<?php echo htmlspecialchars($search_keyword ?? ''); ?>">
-        <button type="submit">Tìm</button>
-    </form>
-    <table border="1" cellpadding="5" cellspacing="0">
-        <tr>
-            <th>ID</th>
-            <th>Khách hàng</th>
-            <th>Điện thoại</th>
-            <th>Địa chỉ</th>
-            <th>Thuốc</th>
-            <th>Tổng tiền</th>
-            <th>Trạng thái</th>
-            <th>Ngày đặt</th>
-        </tr>
-        <?php foreach ($orders as $order): ?>
-        <tr>
-            <td><?php echo $order['id']; ?></td>
-            <td><?php echo htmlspecialchars($order['customer_name']); ?></td>
-            <td><?php echo htmlspecialchars($order['customer_phone']); ?></td>
-            <td><?php echo htmlspecialchars($order['customer_address']); ?></td>
-            <td><?php echo htmlspecialchars($order['medicines']); ?></td>
-            <td><?php echo formatCurrency($order['total_amount']); ?></td>
-            <td class="<?php echo getStatusClass($order['status']); ?>"><?php echo htmlspecialchars($order['status']); ?></td>
-            <td><?php echo $order['order_date']; ?></td>
-            <td>
-                <form method="post" style="display:inline;">
-                    <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                    <select name="new_status">
-                        <option value="Chờ xác nhận" <?php if($order['status']=='Chờ xác nhận') echo 'selected'; ?>>Chờ xác nhận</option>
-                        <option value="Đang xử lý" <?php if($order['status']=='Đang xử lý') echo 'selected'; ?>>Đang xử lý</option>
-                        <option value="Đang giao hàng" <?php if($order['status']=='Đang giao hàng') echo 'selected'; ?>>Đang giao hàng</option>
-                        <option value="Đã giao hàng" <?php if($order['status']=='Đã giao hàng') echo 'selected'; ?>>Đã giao hàng</option>
-                    </select>
-                    <button type="submit" name="update_status">Cập nhật</button>
-                </form>
-                <a href="?delete_id=<?php echo $order['id']; ?>" onclick="return confirm('Bạn có chắc muốn xóa đơn hàng này?');">Xóa</a>
-            </td>
-        </tr>
-        <?php endforeach; ?>
+    <div class="table-header">
+        <div class="search-filters">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm đơn đặt..." onkeyup="timKiem()">
+        </div>
+        <button class="btn btn-primary" onclick="moModal('modal-them')">
+            ➕ Thêm đơn đặt
+        </button>
+    </div>
+
+    <table id="donDatTable">
+        <thead>
+            <tr>
+                <th>Số đơn đặt</th>
+                <th>Ngày đặt</th>
+                <th>Khách hàng</th>
+                <th>Thuốc</th>
+                <th>Số lượng</th>
+                <th>Giá bán</th>
+                <th>Thành tiền</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while($row = $result->fetch_assoc()){ ?>
+            <tr>
+                <td><?= $row['so_don_dat'] ?></td>
+                <td><?= $row['ngay_dat'] ?></td>
+                <td><?= $row['ten_khach_hang'] ?></td>
+                <td><?= $row['ten_thuoc'] ?></td>
+                <td><?= $row['so_luong'] ?></td>
+                <td><?= number_format($row['gia_ban']) ?> đ</td>
+                <td><?= number_format($row['thanh_tien']) ?> đ</td>
+                <td><?= $row['trang_thai'] ?></td>
+                <td>
+                    <button class="btn btn-info" onclick="suaDonDat(
+                        '<?= $row['so_don_dat'] ?>','<?= $row['ngay_dat'] ?>',
+                        '<?= $row['ma_khach'] ?>','<?= $row['ma_thuoc'] ?>',
+                        '<?= $row['so_luong'] ?>','<?= $row['gia_ban'] ?>','<?= $row['trang_thai'] ?>'
+                    )">✏️ Sửa</button>
+                    <a class="btn btn-danger" href="?xoa=<?= $row['so_don_dat'] ?>" onclick="return confirm('Xóa đơn này?')">🗑️ Xóa</a>
+                </td>
+            </tr>
+            <?php } ?>
+        </tbody>
     </table>
+
+    <!-- Modal Thêm -->
+    <div id="modal-them" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="dongModal('modal-them')">&times;</span>
+            <h2>Tạo đơn đặt</h2>
+            <form method="POST">
+                <input type="hidden" name="action" value="them">
+                <label>Ngày đặt</label><input type="date" name="ngay_dat" required><br>
+                <label>Khách hàng</label>
+                <select name="ma_khach" required>
+                    <?php while($kh = $khach_list->fetch_assoc()){ ?>
+                        <option value="<?= $kh['ma_khach'] ?>"><?= $kh['ten_khach_hang'] ?></option>
+                    <?php } ?>
+                </select><br>
+                <label>Thuốc</label>
+                <select name="ma_thuoc" onchange="capNhatGia(this,'add')" required>
+                    <option value="">Chọn thuốc</option>
+                    <?php $thuoc_list->data_seek(0); while($t = $thuoc_list->fetch_assoc()){ ?>
+                        <option value="<?= $t['ma_thuoc'] ?>" data-gia="<?= $t['gia_ban'] ?>">
+                            <?= $t['ten_thuoc'] ?>
+                        </option>
+                    <?php } ?>
+                </select><br>
+                <label>Số lượng</label><input type="number" id="add-sl" name="so_luong" onchange="tinhTien('add')" required><br>
+                <label>Giá bán</label><input type="number" id="add-gia" name="gia_ban" readonly><br>
+                <label>Thành tiền</label><input type="number" id="add-thanhtien" name="thanh_tien" readonly><br>
+                <label>Trạng thái</label><input type="text" name="trang_thai"><br>
+                <button type="submit" class="btn btn-primary">➕ Thêm</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Sửa -->
+    <div id="modal-sua" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="dongModal('modal-sua')">&times;</span>
+            <h2>Sửa đơn đặt</h2>
+            <form method="POST">
+                <input type="hidden" name="action" value="sua">
+                <input type="hidden" name="so_don_dat" id="edit-so">
+                <label>Ngày đặt</label><input type="date" name="ngay_dat" id="edit-ngay" required><br>
+                <label>Khách hàng</label>
+                <select name="ma_khach" id="edit-kh" required>
+                    <?php $khach_list->data_seek(0); while($kh = $khach_list->fetch_assoc()){ ?>
+                        <option value="<?= $kh['ma_khach'] ?>"><?= $kh['ten_khach_hang'] ?></option>
+                    <?php } ?>
+                </select><br>
+                <label>Thuốc</label>
+                <select name="ma_thuoc" id="edit-thuoc" onchange="capNhatGia(this,'edit')" required>
+                    <?php $thuoc_list->data_seek(0); while($t = $thuoc_list->fetch_assoc()){ ?>
+                        <option value="<?= $t['ma_thuoc'] ?>" data-gia="<?= $t['gia_ban'] ?>">
+                            <?= $t['ten_thuoc'] ?>
+                        </option>
+                    <?php } ?>
+                </select><br>
+                <label>Số lượng</label><input type="number" id="edit-sl" name="so_luong" onchange="tinhTien('edit')" required><br>
+                <label>Giá bán</label><input type="number" id="edit-gia" name="gia_ban" readonly><br>
+                <label>Thành tiền</label><input type="number" id="edit-thanhtien" name="thanh_tien" readonly><br>
+                <label>Trạng thái</label><input type="text" name="trang_thai" id="edit-trangthai"><br>
+                <button type="submit" class="btn btn-info">💾 Lưu</button>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
-
