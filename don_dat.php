@@ -1,11 +1,29 @@
 <?php
+// --- PHẦN PHP XỬ LÝ ---
+// Kết nối database
+$host = 'localhost';
+$dbname = 'pharmacy_db';
+$username = 'root';
+$password = '';
 
-// Hàm định dạng tiền VND
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Kết nối database thất bại: " . $e->getMessage());
+}
+
+// Hàm xử lý input
+function sanitizeInput($data) {
+    return htmlspecialchars(stripslashes(trim($data)));
+}
+
+// Hàm định dạng tiền tệ
 function formatCurrency($amount) {
     return number_format($amount, 0, ',', '.') . ' VNĐ';
 }
 
-// Hàm trạng thái của đơn hàng
+// Hàm lấy class cho trạng thái
 function getStatusClass($status) {
     switch ($status) {
         case 'Đã giao hàng':
@@ -20,157 +38,146 @@ function getStatusClass($status) {
             return 'status-default';
     }
 }
+
+// Xử lý form thêm đơn hàng
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
+    $customer_name = sanitizeInput($_POST['customer_name']);
+    $customer_phone = sanitizeInput($_POST['customer_phone']);
+    $customer_address = sanitizeInput($_POST['customer_address']);
+    $medicines = sanitizeInput($_POST['medicines']);
+    $total_amount = (float)$_POST['total_amount'];
+    $status = sanitizeInput($_POST['status']);
+    
+    try {
+        $stmt = $pdo->prepare("INSERT INTO orders (customer_name, customer_phone, customer_address, medicines, total_amount, status) 
+                              VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$customer_name, $customer_phone, $customer_address, $medicines, $total_amount, $status]);
+        $success_message = "Thêm đơn hàng thành công!";
+    } catch (PDOException $e) {
+        $error_message = "Lỗi khi thêm đơn hàng: " . $e->getMessage();
+    }
+}
+
+// Xử lý cập nhật trạng thái
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
+    $order_id = (int)$_POST['order_id'];
+    $new_status = sanitizeInput($_POST['new_status']);
+    
+    try {
+        $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
+        $stmt->execute([$new_status, $order_id]);
+        $success_message = "Cập nhật trạng thái thành công!";
+    } catch (PDOException $e) {
+        $error_message = "Lỗi khi cập nhật trạng thái: " . $e->getMessage();
+    }
+}
+
+// Xử lý xóa đơn hàng
+if (isset($_GET['delete_id'])) {
+    $delete_id = (int)$_GET['delete_id'];
+    
+    try {
+        $stmt = $pdo->prepare("DELETE FROM orders WHERE id = ?");
+        $stmt->execute([$delete_id]);
+        $success_message = "Xóa đơn hàng thành công!";
+    } catch (PDOException $e) {
+        $error_message = "Lỗi khi xóa đơn hàng: " . $e->getMessage();
+    }
+}
+
+// Lấy danh sách đơn hàng
+try {
+    $search_keyword = isset($_GET['search']) ? sanitizeInput($_GET['search']) : '';
+    
+    if ($search_keyword) {
+        $stmt = $pdo->prepare("SELECT * FROM orders 
+                              WHERE customer_name LIKE ? OR customer_phone LIKE ? OR medicines LIKE ?
+                              ORDER BY order_date DESC");
+        $search_param = "%$search_keyword%";
+        $stmt->execute([$search_param, $search_param, $search_param]);
+    } else {
+        $stmt = $pdo->query("SELECT * FROM orders ORDER BY order_date DESC");
+    }
+    
+    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die("Lỗi khi lấy dữ liệu đơn hàng: " . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý đơn đặt hàng - Hiệu thuốc</title>
+    <title>Quản lý đơn hàng</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2c7fb8;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-        tr:hover {
-            background-color: #f9f9f9;
-        }
-        .status {
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-weight: bold;
-            display: inline-block;
-        }
-        .status-delivered {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .status-shipping {
-            background-color: #cce5ff;
-            color: #004085;
-        }
-        .status-processing {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        .status-pending {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .total-row {
-            font-weight: bold;
-            background-color: #e9ecef;
-        }
-        .search-box {
-            margin-bottom: 20px;
-            padding: 10px;
-            width: 100%;
-            box-sizing: border-box;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        @media (max-width: 768px) {
-            table {
-                display: block;
-                overflow-x: auto;
-            }
-        }
+        .status-delivered { color: green; }
+        .status-shipping { color: orange; }
+        .status-processing { color: blue; }
+        .status-pending { color: gray; }
+        .status-default { color: black; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>QUẢN LÝ ĐƠN ĐẶT HÀNG</h1>
-        
-        <input type="text" id="searchInput" class="search-box" placeholder="Tìm kiếm theo tên khách hàng, số điện thoại hoặc trạng thái...">
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Tên khách hàng</th>
-                    <th>Số điện thoại</th>
-                    <th>Ngày đặt</th>
-                    <th>Tổng tiền</th>
-                    <th>Trạng thái</th>
-                </tr>
-            </thead>
-            <tbody id="orderTable">
-                <?php 
-                $totalAll = 0;
-                foreach ($orders as $order): 
-                    $totalAll += $order['total_amount'];
-                ?>
-                <tr>
-                    <td><?php echo $order['id']; ?></td>
-                    <td><?php echo $order['customer_name']; ?></td>
-                    <td><?php echo $order['customer_phone']; ?></td>
-                    <td><?php echo $order['order_date']; ?></td>
-                    <td><?php echo formatCurrency($order['total_amount']); ?></td>
-                    <td><span class="status <?php echo getStatusClass($order['status']); ?>"><?php echo $order['status']; ?></span></td>
-                </tr>
-                <?php endforeach; ?>
-                <tr class="total-row">
-                    <td colspan="4">TỔNG CỘNG</td>
-                    <td><?php echo formatCurrency($totalAll); ?></td>
-                    <td></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <h1>Thêm đơn hàng mới</h1>
+    <?php if (isset($success_message)) echo "<p style='color:green;'>$success_message</p>"; ?>
+    <?php if (isset($error_message)) echo "<p style='color:red;'>$error_message</p>"; ?>
+    <form method="post" action="">
+        <input type="text" name="customer_name" placeholder="Tên khách hàng" required><br>
+        <input type="text" name="customer_phone" placeholder="Số điện thoại" required><br>
+        <textarea name="customer_address" placeholder="Địa chỉ"></textarea><br>
+        <textarea name="medicines" placeholder="Thuốc"></textarea><br>
+        <input type="number" step="0.01" name="total_amount" placeholder="Tổng tiền" required><br>
+        <select name="status">
+            <option value="Chờ xác nhận">Chờ xác nhận</option>
+            <option value="Đang xử lý">Đang xử lý</option>
+            <option value="Đang giao hàng">Đang giao hàng</option>
+            <option value="Đã giao hàng">Đã giao hàng</option>
+        </select><br>
+        <button type="submit" name="add_order">Thêm đơn hàng</button>
+    </form>
 
-    <script>
-        // Chức năng tìm kiếm
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            let input = this.value.toLowerCase();
-            let table = document.getElementById('orderTable');
-            let rows = table.getElementsByTagName('tr');
-            
-            for (let i = 0; i < rows.length - 1; i++) { // -1 để bỏ qua dòng tổng cộng
-                let cells = rows[i].getElementsByTagName('td');
-                let found = false;
-                
-                for (let j = 0; j < cells.length; j++) {
-                    let cellText = cells[j].textContent.toLowerCase();
-                    if (cellText.indexOf(input) > -1) {
-                        found = true;
-                        break;
-                    }
-                }
-                
-                rows[i].style.display = found ? '' : 'none';
-            }
-        });
-    </script>
+    <h1>Danh sách đơn hàng</h1>
+    <form method="get" action="">
+        <input type="text" name="search" placeholder="Tìm kiếm..." value="<?php echo htmlspecialchars($search_keyword ?? ''); ?>">
+        <button type="submit">Tìm</button>
+    </form>
+    <table border="1" cellpadding="5" cellspacing="0">
+        <tr>
+            <th>ID</th>
+            <th>Khách hàng</th>
+            <th>Điện thoại</th>
+            <th>Địa chỉ</th>
+            <th>Thuốc</th>
+            <th>Tổng tiền</th>
+            <th>Trạng thái</th>
+            <th>Ngày đặt</th>
+            <th>Hành động</th>
+        </tr>
+        <?php foreach ($orders as $order): ?>
+        <tr>
+            <td><?php echo $order['id']; ?></td>
+            <td><?php echo htmlspecialchars($order['customer_name']); ?></td>
+            <td><?php echo htmlspecialchars($order['customer_phone']); ?></td>
+            <td><?php echo htmlspecialchars($order['customer_address']); ?></td>
+            <td><?php echo htmlspecialchars($order['medicines']); ?></td>
+            <td><?php echo formatCurrency($order['total_amount']); ?></td>
+            <td class="<?php echo getStatusClass($order['status']); ?>"><?php echo htmlspecialchars($order['status']); ?></td>
+            <td><?php echo $order['order_date']; ?></td>
+            <td>
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+                    <select name="new_status">
+                        <option value="Chờ xác nhận" <?php if($order['status']=='Chờ xác nhận') echo 'selected'; ?>>Chờ xác nhận</option>
+                        <option value="Đang xử lý" <?php if($order['status']=='Đang xử lý') echo 'selected'; ?>>Đang xử lý</option>
+                        <option value="Đang giao hàng" <?php if($order['status']=='Đang giao hàng') echo 'selected'; ?>>Đang giao hàng</option>
+                        <option value="Đã giao hàng" <?php if($order['status']=='Đã giao hàng') echo 'selected'; ?>>Đã giao hàng</option>
+                    </select>
+                    <button type="submit" name="update_status">Cập nhật</button>
+                </form>
+                <a href="?delete_id=<?php echo $order['id']; ?>" onclick="return confirm('Bạn có chắc muốn xóa đơn hàng này?');">Xóa</a>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    </table>
 </body>
 </html>
-
-
