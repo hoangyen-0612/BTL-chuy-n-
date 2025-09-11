@@ -1,208 +1,225 @@
 <?php
+// Kết nối CSDL
 include("connect.php");
+$conn->set_charset("utf8");
 
-// Xử lý thêm, sửa, xóa
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $action = $_POST['action'];
+// ================== XỬ LÝ FORM ================== //
 
-    $soDon = $_POST['so_don_mua'] ?? '';
-    $ngayMua = $_POST['ngay_mua'] ?? '';
-    $maNCC = $_POST['ma_nha_cung_cap'] ?? '';
-    $maThuoc = $_POST['ma_thuoc'] ?? '';
-    $loaiThuoc = $_POST['loai_thuoc'] ?? '';
-    $soLuong = intval($_POST['so_luong'] ?? 0);
-    $giaMua = floatval($_POST['gia_mua'] ?? 0);
-    $thanhTien = $soLuong * $giaMua;
-    $trangThai = $_POST['trang_thai'] ?? 'Chờ xử lý';
-    $ghiChu = $_POST['ghi_chu'] ?? '';
+// Thêm phiếu nhập
+if (isset($_POST['add'])) {
+    $ma_thuoc = $_POST['ma_thuoc'];
+    $so_luong_nhap = intval($_POST['so_luong_nhap']);
+    $gia_nhap = floatval($_POST['gia_nhap']);
+    $thanh_tien_nhap = $so_luong_nhap * $gia_nhap;
 
-    if ($action == 'them') {
-        $stmt = $conn->prepare("INSERT INTO donmua 
-            (so_don_mua, ngay_mua, ma_nha_cung_cap, ma_thuoc, loai_thuoc, so_luong, gia_mua, thanh_tien, trang_thai, ghi_chu) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssiddss", $soDon, $ngayMua, $maNCC, $maThuoc, $loaiThuoc,
-                          $soLuong, $giaMua, $thanhTien, $trangThai, $ghiChu);
-        $stmt->execute();
-    }
+    $result = $conn->query("SELECT MAX(CAST(SUBSTRING(so_pn,3) AS UNSIGNED)) AS max_pn FROM phieunhap");
+    $row = $result->fetch_assoc();
+    $nextNum = $row['max_pn'] ? intval($row['max_pn']) + 1 : 1;
+    $so_pn = 'PN' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
 
-    if ($action == 'sua') {
-        $stmt = $conn->prepare("UPDATE donmua 
-            SET ngay_mua=?, ma_nha_cung_cap=?, ma_thuoc=?, loai_thuoc=?, so_luong=?, gia_mua=?, thanh_tien=?, trang_thai=?, ghi_chu=? 
-            WHERE so_don_mua=?");
-        $stmt->bind_param("ssssiddsss", $ngayMua, $maNCC, $maThuoc, $loaiThuoc,
-                          $soLuong, $giaMua, $thanhTien, $trangThai, $ghiChu, $soDon);
-        $stmt->execute();
+    $sql = "INSERT INTO phieunhap (so_pn, ma_thuoc, so_luong_nhap, gia_nhap, thanh_tien_nhap, ngay_nhap)
+            VALUES ('$so_pn','$ma_thuoc','$so_luong_nhap','$gia_nhap','$thanh_tien_nhap', NOW())";
+    if ($conn->query($sql)) {
+        // Cập nhật tồn kho
+        $conn->query("UPDATE kho k 
+                      JOIN thuoc t ON k.ma_kho = t.ma_kho 
+                      SET k.ton_kho = k.ton_kho + $so_luong_nhap 
+                      WHERE t.ma_thuoc = '$ma_thuoc'");
+    } else {
+        echo "Lỗi Thêm: " . $conn->error;
     }
 }
 
-if (isset($_GET['xoa'])) {
-    $soDon = $_GET['xoa'];
-    $stmt = $conn->prepare("DELETE FROM donmua WHERE so_don_mua=?");
-    $stmt->bind_param("s", $soDon);
-    $stmt->execute();
+// Sửa phiếu nhập
+if (isset($_POST['edit'])) {
+    $so_pn = $_POST['so_pn'];
+    $ma_thuoc = $_POST['ma_thuoc'];
+    $so_luong_nhap_moi = intval($_POST['so_luong_nhap']);
+    $gia_nhap = floatval($_POST['gia_nhap']);
+    $thanh_tien_nhap = $so_luong_nhap_moi * $gia_nhap;
+
+    $old = $conn->query("SELECT so_luong_nhap FROM phieunhap WHERE so_pn='$so_pn'")->fetch_assoc();
+    $so_luong_nhap_cu = intval($old['so_luong_nhap']);
+
+    $sql = "UPDATE phieunhap 
+            SET so_luong_nhap='$so_luong_nhap_moi', gia_nhap='$gia_nhap', thanh_tien_nhap='$thanh_tien_nhap'
+            WHERE so_pn='$so_pn'";
+    if ($conn->query($sql)) {
+        $chenh_lech = $so_luong_nhap_moi - $so_luong_nhap_cu;
+        $conn->query("UPDATE kho k 
+                      JOIN thuoc t ON k.ma_kho = t.ma_kho 
+                      SET k.ton_kho = k.ton_kho + $chenh_lech 
+                      WHERE t.ma_thuoc = '$ma_thuoc'");
+    } else {
+        echo "Lỗi Sửa: " . $conn->error;
+    }
 }
 
-// Lấy danh sách đơn mua (JOIN để hiển thị tên NCC, tên thuốc)
-$sql = "SELECT dm.*, ncc.ten_nha_cung_cap, t.ten_thuoc 
-        FROM donmua dm
-        JOIN nhacungcap ncc ON dm.ma_nha_cung_cap = ncc.ma_nha_cung_cap
-        JOIN thuoc t ON dm.ma_thuoc = t.ma_thuoc
-        ORDER BY dm.so_don_mua DESC";
-$result = $conn->query($sql);
+// Xóa phiếu nhập bằng POST
+if (isset($_POST['delete_pn'])) {
+    $so_pn = $_POST['delete_pn'];
+    $row = $conn->query("SELECT ma_thuoc, so_luong_nhap FROM phieunhap WHERE so_pn='$so_pn'")->fetch_assoc();
+    if ($row) {
+        $ma_thuoc = $row['ma_thuoc'];
+        $so_luong_nhap = intval($row['so_luong_nhap']);
+        $conn->query("DELETE FROM phieunhap WHERE so_pn='$so_pn'");
+        $conn->query("UPDATE kho k 
+                      JOIN thuoc t ON k.ma_kho = t.ma_kho 
+                      SET k.ton_kho = k.ton_kho - $so_luong_nhap 
+                      WHERE t.ma_thuoc = '$ma_thuoc'");
+    }
+}
 
-// Lấy danh sách NCC + thuốc
-$ncc_list = $conn->query("SELECT * FROM nhacungcap");
-$thuoc_list = $conn->query("SELECT * FROM thuoc");
+// ================== LẤY DỮ LIỆU ================== //
+
+$list_sql = "SELECT pn.*, t.ten_thuoc, d.ten_danh_muc, t.ma_kho 
+             FROM phieunhap pn
+             JOIN thuoc t ON pn.ma_thuoc = t.ma_thuoc
+             JOIN danh_muc_thuoc d ON t.ma_danh_muc = d.ma_danh_muc
+             ORDER BY pn.ngay_nhap DESC";
+$list = $conn->query($list_sql);
+
+$thuoc_sql = "SELECT t.ma_thuoc, t.ten_thuoc, d.ten_danh_muc, t.ma_kho, k.ton_kho
+              FROM thuoc t
+              LEFT JOIN danh_muc_thuoc d ON t.ma_danh_muc = d.ma_danh_muc
+              LEFT JOIN kho k ON t.ma_kho = k.ma_kho
+              ORDER BY t.ten_thuoc";
+$thuoc_list = $conn->query($thuoc_sql);
 ?>
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Đơn mua</title>
-    <link rel="stylesheet" href="css.css">
-    <style>
-        .modal {display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-                background:rgba(0,0,0,0.5);justify-content:center;align-items:center;}
-        .modal-content {background:#fff;padding:20px;border-radius:8px;width:500px;}
-        .close {float:right;cursor:pointer;font-size:20px;}
-    </style>
-    <script>
-        function moModal(id){ document.getElementById(id).style.display="flex"; }
-        function dongModal(id){ document.getElementById(id).style.display="none"; }
-
-        function suaDonMua(so, ngay, ncc, thuoc, loai, sl, gia, tt, gc){
-            document.getElementById('edit-so').value = so;
-            document.getElementById('edit-ngay').value = ngay;
-            document.getElementById('edit-ncc').value = ncc;
-            document.getElementById('edit-thuoc').value = thuoc;
-            document.getElementById('edit-loai').value = loai;
-            document.getElementById('edit-soluong').value = sl;
-            document.getElementById('edit-gia').value = gia;
-            document.getElementById('edit-trangthai').value = tt;
-            document.getElementById('edit-ghichu').value = gc;
-            moModal('modal-sua-don-mua');
-        }
-    </script>
+<meta charset="UTF-8">
+<title>Quản lý Phiếu Nhập</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="css.css"> <!-- CSS dùng chung -->
 </head>
 <body>
+
 <div class="page-header">
-    <h1 class="page-title">Quản lý phiếu nhập </h1>
-    <p class="page-subtitle">Phiếu nhập hàng vào kho với chi tiết thuốc</p>
+  <h1 class="page-title">Quản lý Phiếu Nhập</h1>
+  <p class="page-subtitle">Quản lý phiếu nhập hàng</p>
 </div>
 
 <div class="table-container">
-    <div class="table-header">
-        <button class="btn btn-primary" onclick="moModal('modal-them-don-mua')">➕ Tạo phiếu nhập</button>
-    </div>
+<button class="btn btn-primary" onclick="$('#modalAdd').show()">+ Thêm Phiếu Nhập</button>
+<table class="table" id="table-phieu-nhap">
+<tr>
+<th>Mã phiếu</th><th>Tên thuốc</th><th>Loại thuốc</th><th>Mã kho</th>
+<th>Số lượng</th><th>Giá nhập</th><th>Thành tiền</th><th>Ngày nhập</th><th>Hành động</th>
+</tr>
+<?php while($r = $list->fetch_assoc()) { ?>
+<tr>
+<td><?= $r['so_pn'] ?></td>
+<td><?= $r['ten_thuoc'] ?></td>
+<td><?= $r['ten_danh_muc'] ?></td>
+<td><?= $r['ma_kho'] ?></td>
+<td><?= $r['so_luong_nhap'] ?></td>
+<td><?= number_format($r['gia_nhap']) ?></td>
+<td><?= number_format($r['thanh_tien_nhap']) ?></td>
+<td><?= $r['ngay_nhap'] ?></td>
+<td>
+<button class="btn btn-info btn-sm" onclick='editData(<?= json_encode($r, JSON_HEX_APOS|JSON_HEX_QUOT) ?>)'>Sửa</button>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Số đơn</th>
-                <th>Ngày mua</th>
-                <th>Nhà cung cấp</th>
-                <th>Tên thuốc</th>
-                <th>Loại thuốc</th>
-                <th>Số lượng</th>
-                <th>Giá mua</th>
-                <th>Thành tiền</th>
-                <th>Trạng thái</th>
-                <th>Ghi chú</th>
-                <th>Thao tác</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php while($row = $result->fetch_assoc()){ ?>
-            <tr>
-                <td><?= $row['so_don_mua'] ?></td>
-                <td><?= $row['ngay_mua'] ?></td>
-                <td><?= $row['ten_nha_cung_cap'] ?></td>
-                <td><?= $row['ten_thuoc'] ?></td>
-                <td><?= $row['loai_thuoc'] ?></td>
-                <td><?= $row['so_luong'] ?></td>
-                <td><?= number_format($row['gia_mua']) ?> đ</td>
-                <td><?= number_format($row['thanh_tien']) ?> đ</td>
-                <td><?= $row['trang_thai'] ?></td>
-                <td><?= $row['ghi_chu'] ?></td>
-                <td>
-                    <button class="btn btn-info btn-sm"
-                        onclick="suaDonMua('<?= $row['so_don_mua'] ?>','<?= $row['ngay_mua'] ?>',
-                                           '<?= $row['ma_nha_cung_cap'] ?>','<?= $row['ma_thuoc'] ?>',
-                                           '<?= $row['loai_thuoc'] ?>','<?= $row['so_luong'] ?>',
-                                           '<?= $row['gia_mua'] ?>','<?= $row['trang_thai'] ?>',
-                                           '<?= $row['ghi_chu'] ?>')">✏️ Sửa</button>
-                    <a href="?page=don-mua&xoa=<?= $row['so_don_mua'] ?>"
-                       class="btn btn-danger btn-sm"
-                       onclick="return confirm('Xóa đơn này?')">🗑️ Xóa</a>
-                </td>
-            </tr>
-            <?php } ?>
-        </tbody>
-    </table>
+<form method="post" style="display:inline;" onsubmit="return confirm('Xóa phiếu này?')">
+  <input type="hidden" name="delete_pn" value="<?= $r['so_pn'] ?>">
+  <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+</form>
+
+<button class="btn btn-primary btn-sm" onclick='printInvoice(<?= json_encode($r, JSON_HEX_APOS|JSON_HEX_QUOT) ?>)'>In</button>
+</td>
+</tr>
+<?php } ?>
+</table>
 </div>
 
 <!-- Modal Thêm -->
-<div id="modal-them-don-mua" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="dongModal('modal-them-don-mua')">&times;</span>
-        <h2>Tạo đơn mua</h2>
-        <form method="POST">
-            <input type="hidden" name="action" value="them">
-            <label>Số đơn</label><input type="text" name="so_don_mua" required><br>
-            <label>Ngày mua</label><input type="date" name="ngay_mua" required><br>
-            <label>Nhà cung cấp</label>
-            <select name="ma_nha_cung_cap" required>
-                <?php $ncc_list->data_seek(0); while($ncc = $ncc_list->fetch_assoc()){ ?>
-                    <option value="<?= $ncc['ma_nha_cung_cap'] ?>"><?= $ncc['ten_nha_cung_cap'] ?></option>
-                <?php } ?>
-            </select><br>
-            <label>Thuốc</label>
-            <select name="ma_thuoc" required>
-                <?php $thuoc_list->data_seek(0); while($t = $thuoc_list->fetch_assoc()){ ?>
-                    <option value="<?= $t['ma_thuoc'] ?>"><?= $t['ten_thuoc'] ?></option>
-                <?php } ?>
-            </select><br>
-            <label>Loại thuốc</label><input type="text" name="loai_thuoc" required><br>
-            <label>Số lượng</label><input type="number" name="so_luong" required><br>
-            <label>Giá mua</label><input type="number" name="gia_mua" required><br>
-            <label>Trạng thái</label><input type="text" name="trang_thai"><br>
-            <label>Ghi chú</label><input type="text" name="ghi_chu"><br>
-            <button type="submit" class="btn btn-primary">Thêm</button>
-        </form>
-    </div>
+<div id="modalAdd" class="modal">
+<div class="modal-content">
+<h3>Thêm Phiếu Nhập</h3>
+<form method="post">
+<label>Thuốc:</label>
+<select name="ma_thuoc" id="thuocSelectAdd" required>
+<option value="">-- Chọn thuốc --</option>
+<?php while($t=$thuoc_list->fetch_assoc()){ ?>
+<option value="<?= $t['ma_thuoc'] ?>" data-loai="<?= $t['ten_danh_muc'] ?>" data-kho="<?= $t['ma_kho'] ?>" data-ton="<?= $t['ton_kho'] ?>"><?= $t['ten_thuoc'] ?></option>
+<?php } ?>
+</select><br>
+<label>Loại thuốc:</label><input type="text" id="loaiThuocAdd" disabled><br>
+<label>Mã kho:</label><input type="text" id="maKhoAdd" disabled><br>
+<label>Tồn kho:</label><input type="text" id="tonKhoAdd" disabled><br>
+<label>Số lượng nhập:</label><input type="number" name="so_luong_nhap" required><br>
+<label>Giá nhập:</label><input type="number" name="gia_nhap" required><br>
+<button type="submit" name="add" class="btn btn-primary">Lưu</button>
+<button type="button" class="btn" onclick="$('#modalAdd').hide()">Hủy</button>
+</form>
+</div>
 </div>
 
 <!-- Modal Sửa -->
-<div id="modal-sua-don-mua" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="dongModal('modal-sua-don-mua')">&times;</span>
-        <h2>Sửa đơn mua</h2>
-        <form method="POST">
-            <input type="hidden" name="action" value="sua">
-            <label>Số đơn</label><input type="text" name="so_don_mua" id="edit-so" readonly><br>
-            <label>Ngày mua</label><input type="date" name="ngay_mua" id="edit-ngay" required><br>
-            <label>Nhà cung cấp</label>
-            <select name="ma_nha_cung_cap" id="edit-ncc" required>
-                <?php $ncc_list->data_seek(0); while($ncc = $ncc_list->fetch_assoc()){ ?>
-                    <option value="<?= $ncc['ma_nha_cung_cap'] ?>"><?= $ncc['ten_nha_cung_cap'] ?></option>
-                <?php } ?>
-            </select><br>
-            <label>Thuốc</label>
-            <select name="ma_thuoc" id="edit-thuoc" required>
-                <?php $thuoc_list->data_seek(0); while($t = $thuoc_list->fetch_assoc()){ ?>
-                    <option value="<?= $t['ma_thuoc'] ?>"><?= $t['ten_thuoc'] ?></option>
-                <?php } ?>
-            </select><br>
-            <label>Loại thuốc</label><input type="text" name="loai_thuoc" id="edit-loai" required><br>
-            <label>Số lượng</label><input type="number" name="so_luong" id="edit-soluong" required><br>
-            <label>Giá mua</label><input type="number" name="gia_mua" id="edit-gia" required><br>
-            <label>Trạng thái</label><input type="text" name="trang_thai" id="edit-trangthai"><br>
-            <label>Ghi chú</label><input type="text" name="ghi_chu" id="edit-ghichu"><br>
-            <button type="submit" class="btn btn-primary">Lưu</button>
-        </form>
-    </div>
+<div id="modalEdit" class="modal">
+<div class="modal-content">
+<h3>Sửa Phiếu Nhập</h3>
+<form method="post">
+<input type="hidden" name="so_pn" id="editMaPhieu">
+<input type="hidden" name="ma_thuoc" id="editMaThuoc">
+<label>Thuốc:</label><input type="text" id="editTenThuoc" disabled><br>
+<label>Số lượng nhập:</label><input type="number" name="so_luong_nhap" id="editSoLuong" required><br>
+<label>Giá nhập:</label><input type="number" name="gia_nhap" id="editGiaNhap" required><br>
+<button type="submit" name="edit" class="btn btn-primary">Cập nhật</button>
+<button type="button" class="btn" onclick="$('#modalEdit').hide()">Hủy</button>
+</form>
 </div>
+</div>
+
+<!-- In phiếu -->
+<div id="printArea" style="display:none;">
+<h3>PHIẾU NHẬP KHO</h3>
+<p>Mã phiếu: <span id="p_ma"></span></p>
+<p>Tên thuốc: <span id="p_ten"></span></p>
+<p>Loại thuốc: <span id="p_loai"></span></p>
+<p>Mã kho: <span id="p_kho"></span></p>
+<p>Số lượng: <span id="p_sl"></span></p>
+<p>Giá nhập: <span id="p_gia"></span></p>
+<p>Thành tiền: <span id="p_tt"></span></p>
+<p>Ngày nhập: <span id="p_ngay"></span></p>
+</div>
+
+<script>
+$("#thuocSelectAdd").change(function(){
+  let opt=$(this).find(":selected");
+  $("#loaiThuocAdd").val(opt.data("loai"));
+  $("#maKhoAdd").val(opt.data("kho"));
+  $("#tonKhoAdd").val(opt.data("ton"));
+});
+
+function editData(row){
+  $("#editMaPhieu").val(row.so_pn);
+  $("#editMaThuoc").val(row.ma_thuoc);
+  $("#editTenThuoc").val(row.ten_thuoc);
+  $("#editSoLuong").val(row.so_luong_nhap);
+  $("#editGiaNhap").val(row.gia_nhap);
+  $("#modalEdit").show();
+}
+
+function printInvoice(r){
+  $("#p_ma").text(r.so_pn);
+  $("#p_ten").text(r.ten_thuoc);
+  $("#p_loai").text(r.ten_danh_muc);
+  $("#p_kho").text(r.ma_kho);
+  $("#p_sl").text(r.so_luong_nhap);
+  $("#p_gia").text(r.gia_nhap);
+  $("#p_tt").text(r.thanh_tien_nhap);
+  $("#p_ngay").text(r.ngay_nhap);
+
+  let printContent=document.getElementById("printArea").innerHTML;
+  let newWin=window.open("");
+  newWin.document.write(printContent);
+  newWin.print();
+  newWin.close();
+}
+</script>
+
 </body>
 </html>
-
