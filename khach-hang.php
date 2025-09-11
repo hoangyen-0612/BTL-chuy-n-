@@ -1,244 +1,162 @@
+</thead>
+        <tbody>
+        <?php while($r = $list->fetch_assoc()) { ?>
+            <tr>
+                <td><?= $r['ma_khach'] ?></td>
+                <td><?= $r['ten_khach_hang'] ?></td>
+                <td><?= $r['dia_chi'] ?></td>
+                <td><?= $r['dien_thoai'] ?></td>
+                <td>
+                    <button class="btn btn-info" onclick='suaKH(<?= json_encode($r, JSON_HEX_APOS|JSON_HEX_QUOT) ?>)'>Sửa</button>
+                    <form method="post" style="display:inline;" onsubmit="return confirm('Xóa khách hàng này?')">
+                        <input type="hidden" name="ma_khach" value="<?= $r['ma_khach'] ?>">
+                        <button type="submit" name="delete" class="btn btn-danger">Xóa</button>
+                    </form>
+                </td>
+            </tr>
+        <?php } ?>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Thêm -->
+<div id="modal-them" class="modal">
+<div class="modal-header">
+<h3>Thêm khách hàng</h3>
+<button class="close-btn" onclick="dongModal('modal-them')">&times;</button>
+</div>
+<form method="post">
+    <label>Tên KH</label><br>
+    <input type="text" name="ten" required><br>
+    <label>Địa chỉ</label><br>
+    <textarea name="dia_chi" required></textarea><br>
+    <label>Điện thoại</label><br>
+    <input type="tel" name="dien_thoai" required><br><br>
+    <button type="submit" name="add" class="btn btn-primary">Thêm</button>
+    <button type="button" class="btn" onclick="dongModal('modal-them')">Hủy</button>
+</form>
+</div>
+
+<!-- Modal Sửa -->
+<div id="modal-sua" class="modal">
+<div class="modal-header">
+<h3>Sửa khách hàng</h3>
+<button class="close-btn" onclick="dongModal('modal-sua')">&times;</button>
+</div>
+<form method="post">
+    <input type="hidden" name="ma_khach" id="edit_ma_khach">
+    <label>Tên KH</label><br>
+    <input type="text" name="ten" id="edit_ten" required><br>
+    <label>Địa chỉ</label><br>
+    <textarea name="dia_chi" id="edit_dia_chi" required></textarea><br>
+    <label>Điện thoại</label><br>
+    <input type="tel" name="dien_thoai" id="edit_dien_thoai" required><br><br>
+    <button type="submit" name="edit" class="btn btn-primary">Cập nhật</button>
+    <button type="button" class="btn" onclick="dongModal('modal-sua')">Hủy</button>
+</form>
+</div>
+
+<script>
+function moModal(id){ $('#'+id).show(); }
+function dongModal(id){ $('#'+id).hide(); }
+
+function suaKH(r){
+    $('#edit_ma_khach').val(r.ma_khach);
+    $('#edit_ten').val(r.ten_khach_hang);
+    $('#edit_dia_chi').val(r.dia_chi);
+    $('#edit_dien_thoai').val(r.dien_thoai);
+    moModal('modal-sua');
+}
+
+// Tìm kiếm trực tiếp
+function timKiem(value){
+    value = value.toLowerCase();
+    $('#table-kh tbody tr').each(function(){
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+    });
+}
+</script>
+</body>
+</html>
+<?php
+include("connect.php");
+$conn->set_charset("utf8");
+
+// ================== XỬ LÝ FORM ================== //
+
+// Thêm khách hàng
+if (isset($_POST['add'])) {
+    $ten = $_POST['ten'];
+    $dia_chi = $_POST['dia_chi'];
+    $dien_thoai = $_POST['dien_thoai'];
+
+    $result = $conn->query("SELECT MAX(CAST(SUBSTRING(ma_khach,3) AS UNSIGNED)) AS max_kh FROM khachhang");
+    $row = $result->fetch_assoc();
+    $nextNum = $row['max_kh'] ? intval($row['max_kh']) + 1 : 1;
+    $ma_khach = 'KH' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+
+    $conn->query("INSERT INTO khachhang (ma_khach, ten_khach_hang, dia_chi, dien_thoai) 
+                  VALUES ('$ma_khach', '$ten', '$dia_chi', '$dien_thoai')");
+}
+
+// Sửa khách hàng
+if (isset($_POST['edit'])) {
+    $ma_khach = $_POST['ma_khach'];
+    $ten = $_POST['ten'];
+    $dia_chi = $_POST['dia_chi'];
+    $dien_thoai = $_POST['dien_thoai'];
+
+    $conn->query("UPDATE khachhang 
+                  SET ten_khach_hang='$ten', dia_chi='$dia_chi', dien_thoai='$dien_thoai'
+                  WHERE ma_khach='$ma_khach'");
+}
+
+// Xóa khách hàng
+if (isset($_POST['delete'])) {
+    $ma_khach = $_POST['ma_khach'];
+    $conn->query("DELETE FROM khachhang WHERE ma_khach='$ma_khach'");
+}
+
+// ================== LẤY DỮ LIỆU ================== //
+$list = $conn->query("SELECT * FROM khachhang ORDER BY ma_khach ASC");
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Khách hàng</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản lý Khách hàng</title>
+<link rel="stylesheet" href="css.css">
+<style>
+.modal { display:none; position: fixed; top:50%; left:50%; transform: translate(-50%, -50%); background:#fff; padding:20px; border:1px solid #333; z-index:1000; width:400px; box-shadow:0 4px 10px rgba(0,0,0,0.2); }
+.modal-header { display:flex; justify-content:space-between; align-items:center; }
+.modal-header h3 { margin:0; }
+.close-btn { background:none; border:none; font-size:20px; cursor:pointer; }
+.table-container { margin-top:20px; }
+.search-input { padding:5px; width:200px; }
+.btn { padding:5px 10px; cursor:pointer; margin:2px; }
+.btn-primary { background:#4CAF50; color:white; border:none; }
+.btn-danger { background:#f44336; color:white; border:none; }
+.btn-info { background:#2196F3; color:white; border:none; }
+</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <div id="khach-hang" class="page">
-        <div class="page-header">
-            <h1 class="page-title">Quản lý khách hàng</h1>
-            <p class="page-subtitle">Thông tin khách hàng</p>
-        </div>
+<div class="page">
+    <h1>Quản lý Khách hàng</h1>
 
-        <div class="table-container">
-            <div class="table-header">
-                <div class="search-filters">
-                    <input type="text" class="search-input" placeholder="Tìm kiếm khách hàng..." onkeyup="timKiem('kh', this.value)" />
-                </div>
-                <button class="btn btn-primary" onclick="moModal('modal-them-khach-hang')">
-                    ➕ Thêm khách hàng
-                </button>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Mã khách</th>
-                        <th>Tên khách hàng</th>
-                        <th>Địa chỉ</th>
-                        <th>Điện thoại</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody id="danh-sach-khach-hang">
-                    <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
-                </tbody>
-            </table>
-        </div>
+    <div class="table-header">
+        <input type="text" class="search-input" placeholder="Tìm kiếm..." onkeyup="timKiem(this.value)">
+        <button class="btn btn-primary" onclick="moModal('modal-them')">➕ Thêm khách hàng</button>
     </div>
 
-    <!-- Modal thêm khách hàng -->
-    <div id="modal-them-khach-hang" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Thêm khách hàng</h3>
-                <button class="close-btn" onclick="dongModal('modal-them-khach-hang')">&times;</button>
-            </div>
-            <form onsubmit="themKhachHang(event)">
-                <div class="form-group">
-                    <label class="form-label">Tên khách hàng</label>
-                    <input type="text" class="form-input" name="tenKhachHang" required />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Địa chỉ</label>
-                    <textarea class="form-textarea" name="diaChi" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Điện thoại</label>
-                    <input type="tel" class="form-input" name="dienThoai" required />
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn" onclick="dongModal('modal-them-khach-hang')">Hủy</button>
-                    <button type="submit" class="btn btn-primary">Thêm khách hàng</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal sửa khách hàng -->
-    <div id="modal-sua-khach-hang" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Sửa khách hàng</h3>
-                <button class="close-btn" onclick="dongModal('modal-sua-khach-hang')">&times;</button>
-            </div>
-            <form onsubmit="capNhatKhachHang(event)">
-                <input type="hidden" name="maKhachHang" id="edit-maKhachHang" />
-                <div class="form-group">
-                    <label class="form-label">Tên khách hàng</label>
-                    <input type="text" class="form-input" name="tenKhachHang" id="edit-tenKhachHang" required />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Địa chỉ</label>
-                    <textarea class="form-textarea" name="diaChi" id="edit-diaChi" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Điện thoại</label>
-                    <input type="tel" class="form-input" name="dienThoai" id="edit-dienThoai" required />
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn" onclick="dongModal('modal-sua-khach-hang')">Hủy</button>
-                    <button type="submit" class="btn btn-primary">Cập nhật</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        // Mảng lưu danh sách khách hàng
-        let danhSachKhachHang = [];
-
-        // Hàm tạo mã khách hàng tự động (ví dụ KH001, KH002,...)
-        function taoMaKhachHang() {
-            let maxId = 0;
-            danhSachKhachHang.forEach(kh => {
-                let num = parseInt(kh.maKhach.replace('KH', ''));
-                if (num > maxId) maxId = num;
-            });
-            return 'KH' + String(maxId + 1).padStart(3, '0');
-        }
-
-        // Hàm hiển thị danh sách khách hàng lên bảng
-        function hienThiDanhSach() {
-            const tbody = document.getElementById('danh-sach-khach-hang');
-            tbody.innerHTML = '';
-            danhSachKhachHang.forEach(kh => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${kh.maKhach}</td>
-                    <td>${kh.tenKhachHang}</td>
-                    <td>${kh.diaChi}</td>
-                    <td>${kh.dienThoai}</td>
-                    <td>
-                        <button class="btn btn-edit" onclick="moModalSuaKhachHang('${kh.maKhach}')">✏️ Sửa</button>
-                        <button class="btn btn-delete" onclick="xoaKhachHang('${kh.maKhach}')">🗑️ Xóa</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Hàm mở modal
-        function moModal(id) {
-            document.getElementById(id).classList.remove('hidden');
-        }
-
-        // Hàm đóng modal
-        function dongModal(id) {
-            document.getElementById(id).classList.add('hidden');
-        }
-
-        // Thêm khách hàng mới
-        function themKhachHang(event) {
-            event.preventDefault();
-            const form = event.target;
-            const tenKhachHang = form.tenKhachHang.value.trim();
-            const diaChi = form.diaChi.value.trim();
-            const dienThoai = form.dienThoai.value.trim();
-
-            if (!tenKhachHang || !diaChi || !dienThoai) {
-                alert('Vui lòng nhập đầy đủ thông tin!');
-                return;
-            }
-
-            const maKhach = taoMaKhachHang();
-
-            danhSachKhachHang.push({ maKhach, tenKhachHang, diaChi, dienThoai });
-            hienThiDanhSach();
-            dongModal('modal-them-khach-hang');
-            form.reset();
-        }
-
-        // Mở modal sửa khách hàng và điền dữ liệu vào form
-        function moModalSuaKhachHang(maKhach) {
-            const kh = danhSachKhachHang.find(kh => kh.maKhach === maKhach);
-            if (!kh) return alert('Không tìm thấy khách hàng!');
-
-            document.getElementById('edit-maKhachHang').value = kh.maKhach;
-            document.getElementById('edit-tenKhachHang').value = kh.tenKhachHang;
-            document.getElementById('edit-diaChi').value = kh.diaChi;
-            document.getElementById('edit-dienThoai').value = kh.dienThoai;
-
-            moModal('modal-sua-khach-hang');
-        }
-
-        // Cập nhật thông tin khách hàng
-        function capNhatKhachHang(event) {
-            event.preventDefault();
-            const form = event.target;
-            const maKhach = form.maKhachHang.value;
-            const tenKhachHang = form.tenKhachHang.value.trim();
-            const diaChi = form.diaChi.value.trim();
-            const dienThoai = form.dienThoai.value.trim();
-
-            if (!tenKhachHang || !diaChi || !dienThoai) {
-                alert('Vui lòng nhập đầy đủ thông tin!');
-                return;
-            }
-
-            const index = danhSachKhachHang.findIndex(kh => kh.maKhach === maKhach);
-            if (index === -1) return alert('Không tìm thấy khách hàng!');
-
-            danhSachKhachHang[index] = { maKhach, tenKhachHang, diaChi, dienThoai };
-            hienThiDanhSach();
-            dongModal('modal-sua-khach-hang');
-        }
-
-        // Xóa khách hàng
-        function xoaKhachHang(maKhach) {
-            if (!confirm('Bạn có chắc muốn xóa khách hàng này?')) return;
-            danhSachKhachHang = danhSachKhachHang.filter(kh => kh.maKhach !== maKhach);
-            hienThiDanhSach();
-        }
-
-        // Hàm tìm kiếm khách hàng
-        function timKiem(prefix, keyword) {
-            keyword = keyword.toLowerCase();
-            const tbody = document.getElementById('danh-sach-khach-hang');
-            tbody.innerHTML = '';
-            danhSachKhachHang.forEach(kh => {
-                if (
-                    kh.maKhach.toLowerCase().includes(keyword) ||
-                    kh.tenKhachHang.toLowerCase().includes(keyword) ||
-                    kh.diaChi.toLowerCase().includes(keyword) ||
-                    kh.dienThoai.toLowerCase().includes(keyword)
-                ) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${kh.maKhach}</td>
-                        <td>${kh.tenKhachHang}</td>
-                        <td>${kh.diaChi}</td>
-                        <td>${kh.dienThoai}</td>
-                        <td>
-                            <button class="btn btn-edit" onclick="moModalSuaKhachHang('${kh.maKhach}')">✏️ Sửa</button>
-                            <button class="btn btn-delete" onclick="xoaKhachHang('${kh.maKhach}')">🗑️ Xóa</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                }
-            });
-        }
-
-        // Khởi tạo trang với dữ liệu mẫu
-        document.addEventListener('DOMContentLoaded', () => {
-            danhSachKhachHang = [
-                { maKhach: 'KH001', tenKhachHang: 'Nguyễn Văn A', diaChi: 'Hà Nội', dienThoai: '0123456789' },
-                { maKhach: 'KH002', tenKhachHang: 'Trần Thị B', diaChi: 'Hồ Chí Minh', dienThoai: '0987654321' }
-            ];
-            hienThiDanhSach();
-        });
-    </script>
-</body>
-</html> 
+    <table class="table" id="table-kh">
+        <thead>
+            <tr>
+                <th>Mã KH</th>
+                <th>Tên KH</th>
+                <th>Địa chỉ</th>
+                <th>Điện thoại</th>
+                <th>Thao tác</th>
+            </tr>
