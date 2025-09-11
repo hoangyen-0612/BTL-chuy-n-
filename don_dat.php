@@ -151,7 +151,6 @@ try {
             <th>Tổng tiền</th>
             <th>Trạng thái</th>
             <th>Ngày đặt</th>
-            <th>Hành động</th>
         </tr>
         <?php foreach ($orders as $order): ?>
         <tr>
@@ -181,3 +180,4 @@ try {
     </table>
 </body>
 </html>
+
