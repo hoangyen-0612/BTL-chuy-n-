@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý nhân viên</title>
+    <link rel="stylesheet" href="qlnhanvien.css">
+</head>
+<body>
+    <div id="nhan-vien" class="page hidden">
+                <div class="page-header">
+                    <h1 class="page-title">Quản lý nhân viên</h1>
+                    <p class="page-subtitle">Thông tin nhân viên</p>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="search-filters">
+                            <input type="text" class="search-input" placeholder="Tìm kiếm nhân viên..." onkeyup="timKiem('nhanvien', this.value)">
+                        </div>
+                        <button class="btn btn-primary" onclick="moModal('modal-them-nhan-vien')">
+                            ➕ Thêm nhân viên
+                        </button>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã nhân viên</th>
+                                <th>Tên nhân viên</th>
+                                <th>Địa chỉ</th>
+                                <th>Điện thoại</th>
+                                <th>Chức vụ</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="danh-sach-nhan-vien">
+                            <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- Modal thêm nhân viên -->
+    <div id="modal-them-nhan-vien" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Thêm nhân viên</h3>
+                <button class="close-btn" onclick="dongModal('modal-them-nhan-vien')">&times;</button>
+            </div>
+            <form onsubmit="themNhanVien(event)">
+                <div class="form-group">
+                    <label class="form-label">Tên nhân viên</label>
+                    <input type="text" class="form-input" name="tenNhanVien" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Địa chỉ</label>
+                    <textarea class="form-textarea" name="diaChi" required></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Điện thoại</label>
+                        <input type="tel" class="form-input" name="dienThoai" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Chức vụ</label>
+                        <select class="form-select" name="chucVu" required>
+                            <option value="">Chọn chức vụ</option>
+                            <option value="Dược sĩ">Dược sĩ</option>
+                            <option value="Nhân viên bán hàng">Nhân viên bán hàng</option>
+                            <option value="Kế toán">Kế toán</option>
+                            <option value="Quản lý">Quản lý</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn" onclick="dongModal('modal-them-nhan-vien')">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Thêm nhân viên</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
