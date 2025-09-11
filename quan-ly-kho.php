@@ -1,89 +1,46 @@
 <?php
 include("connect.php");
+mysqli_set_charset($conn, "utf8");
 
-// ==================== AUTO TĂNG MÃ KHO ====================
-function taoMaKho($conn){
-    $sql = "SELECT ma_kho FROM kho ORDER BY ma_kho DESC LIMIT 1";
-    $result = $conn->query($sql);
-    if($row = $result->fetch_assoc()){
-        $last_id = intval(substr($row['ma_kho'], 1)) + 1;
-    } else {
-        $last_id = 1;
-    }
-    return "K" . str_pad($last_id, 3, "0", STR_PAD_LEFT);
-}
+// ==================== XOÁ KHO ====================
+if (isset($_GET['delete'])) {
+    $ma_kho = $_GET['delete'];
 
-// ==================== THÊM KHO ====================
-if (isset($_POST['action']) && $_POST['action'] == 'them') {
-    $ma_kho = taoMaKho($conn);
-    $ma_hang = $_POST['ma_hang'];
-    $sl_nhap = $_POST['sl_nhap'];
-    $sl_giao = $_POST['sl_giao'];
-    $ton_kho = $sl_nhap - $sl_giao;
+    // Bỏ liên kết thuốc
+    $conn->query("UPDATE thuoc SET ma_kho=NULL WHERE ma_kho='$ma_kho'");
 
-    $stmt = $conn->prepare("INSERT INTO kho (ma_kho, ma_hang, sl_nhap, sl_giao, ton_kho) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssiii", $ma_kho, $ma_hang, $sl_nhap, $sl_giao, $ton_kho);
-    $stmt->execute();
+    // Xoá kho
+    $conn->query("DELETE FROM kho WHERE ma_kho='$ma_kho'");
     header("Location: quanly.php?page=quan-ly-kho");
     exit();
 }
 
 // ==================== SỬA KHO ====================
-if (isset($_POST['action']) && $_POST['action'] == 'sua') {
-    $ma_kho = $_POST['ma_kho'];
-    $ma_hang = $_POST['ma_hang'];
-    $sl_nhap = $_POST['sl_nhap'];
-    $sl_giao = $_POST['sl_giao'];
-    $ton_kho = $sl_nhap - $sl_giao;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['suaKho'])) {
+    $maKho  = $_POST['maKho'];
+    $slNhap = intval($_POST['slNhap']);
+    $slGiao = intval($_POST['slGiao']);
+    $tonKho = $slNhap - $slGiao;
 
-    $stmt = $conn->prepare("UPDATE kho SET ma_hang=?, sl_nhap=?, sl_giao=?, ton_kho=? WHERE ma_kho=?");
-    $stmt->bind_param("siiis", $ma_hang, $sl_nhap, $sl_giao, $ton_kho, $ma_kho);
-    $stmt->execute();
-    header("Location: quanly.php?page=quan-ly-kho");
-    exit();
+    $sql = "UPDATE kho SET sl_nhap='$slNhap', sl_giao='$slGiao', ton_kho='$tonKho' WHERE ma_kho='$maKho'";
+    if ($conn->query($sql)) {
+        header("Location: quanly.php?page=quan-ly-kho");
+        exit();
+    } else {
+        echo "Lỗi sửa kho: " . $conn->error;
+    }
 }
 
-// ==================== XÓA KHO ====================
-if (isset($_GET['delete'])) {
-    $ma_kho = $_GET['delete'];
-    $stmt = $conn->prepare("DELETE FROM kho WHERE ma_kho=?");
-    $stmt->bind_param("s", $ma_kho);
-    $stmt->execute();
-    header("Location: quanly.php?page=quan-ly-kho");
-    exit();
-}
-
-// ==================== LẤY DANH SÁCH KHO ====================
-$sql = "SELECT k.*, t.ten_thuoc 
+// ==================== TÌM KIẾM ====================
+$keyword = isset($_GET['search']) ? $_GET['search'] : "";
+$sql = "SELECT k.ma_kho, t.ten_thuoc, k.sl_nhap, k.sl_giao, k.ton_kho 
         FROM kho k 
-        JOIN thuoc t ON k.ma_hang = t.ma_thuoc 
-        ORDER BY k.ma_kho ASC";
-$kho_list = $conn->query($sql);
-
-// Lấy danh sách thuốc để hiển thị trong select
-$thuoc_list = $conn->query("SELECT ma_thuoc, ten_thuoc FROM thuoc ORDER BY ten_thuoc ASC");
+        LEFT JOIN thuoc t ON t.ma_kho = k.ma_kho
+        WHERE t.ten_thuoc LIKE '%$keyword%' OR k.ma_kho LIKE '%$keyword%'";
+$result = $conn->query($sql);
 ?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Quản lý kho</title>
-    <link rel="stylesheet" href="css.css">
-    <style>
-        .hidden { display:none; }
-        .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; }
-        .modal-content { background:#fff; padding:20px; border-radius:8px; width:500px; box-shadow:0 5px 15px rgba(0,0,0,0.3); }
-        .close { float:right; font-size:22px; cursor:pointer; }
-        .btn { padding:5px 10px; border:none; cursor:pointer; border-radius:4px; }
-        .btn-primary { background:#007bff; color:#fff; }
-        .btn-danger { background:#dc3545; color:#fff; }
-        .btn-info { background:#17a2b8; color:#fff; }
-        table { width:100%; border-collapse:collapse; margin-top:15px; }
-        table, th, td { border:1px solid #ccc; }
-        th, td { padding:10px; text-align:center; }
-    </style>
-</head>
-<body>
+
+<!-- Quản lý kho -->
 <div id="quan-ly-kho" class="page">
     <div class="page-header">
         <h1 class="page-title">Quản lý kho</h1>
@@ -93,16 +50,17 @@ $thuoc_list = $conn->query("SELECT ma_thuoc, ten_thuoc FROM thuoc ORDER BY ten_t
     <div class="table-container">
         <div class="table-header">
             <div class="search-filters">
-                <input type="text" id="searchInput" class="search-input" placeholder="Tìm kiếm mã kho, mã thuốc, tên thuốc..." onkeyup="timKiem()">
+                <form method="get" action="quanly.php">
+                    <input type="hidden" name="page" value="quan-ly-kho">
+                    <input type="text" class="search-input" name="search" placeholder="Tìm kiếm kho..." value="<?php echo $keyword; ?>">
+                </form>
             </div>
-            <button class="btn btn-primary" onclick="moModal('modal-them')">➕ Thêm kho mới</button>
         </div>
-
-        <table id="khoTable">
+        
+        <table>
             <thead>
                 <tr>
                     <th>Mã kho</th>
-                    <th>Mã hàng</th>
                     <th>Tên thuốc</th>
                     <th>SL nhập</th>
                     <th>SL giao</th>
@@ -111,93 +69,78 @@ $thuoc_list = $conn->query("SELECT ma_thuoc, ten_thuoc FROM thuoc ORDER BY ten_t
                 </tr>
             </thead>
             <tbody>
-                <?php while($row = $kho_list->fetch_assoc()){ ?>
+                <?php while($row = $result->fetch_assoc()): ?>
                 <tr>
-                    <td><?= $row['ma_kho'] ?></td>
-                    <td><?= $row['ma_hang'] ?></td>
-                    <td><?= $row['ten_thuoc'] ?></td>
-                    <td><?= $row['sl_nhap'] ?></td>
-                    <td><?= $row['sl_giao'] ?></td>
-                    <td><?= $row['ton_kho'] ?></td>
+                    <td><?php echo $row['ma_kho']; ?></td>
+                    <td><?php echo $row['ten_thuoc']; ?></td>
+                    <td><?php echo $row['sl_nhap']; ?></td>
+                    <td><?php echo $row['sl_giao']; ?></td>
+                    <td><?php echo $row['ton_kho']; ?></td>
                     <td>
-                        <button class="btn btn-info" onclick="suaKho('<?= $row['ma_kho'] ?>','<?= $row['ma_hang'] ?>','<?= $row['sl_nhap'] ?>','<?= $row['sl_giao'] ?>')">✏️ Sửa</button>
-                        <a href="?delete=<?= $row['ma_kho'] ?>" class="btn btn-danger" onclick="return confirm('Xóa kho này?')">🗑️ Xóa</a>
+                        <button class="btn btn-info btn-sm" onclick="suaKho('<?php echo $row['ma_kho']; ?>','<?php echo $row['sl_nhap']; ?>','<?php echo $row['sl_giao']; ?>')">✏️ Sửa</button>
+                        <a href="quan-ly-kho.php?delete=<?php echo $row['ma_kho']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Xoá kho này?')">🗑️ Xóa</a>
                     </td>
                 </tr>
-                <?php } ?>
+                <?php endwhile; ?>
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- Modal Thêm -->
-<div id="modal-them" class="modal hidden">
+<!-- Modal sửa kho -->
+<div id="modal-sua-kho" class="modal" style="display:none;">
     <div class="modal-content">
-        <span class="close" onclick="dongModal('modal-them')">&times;</span>
-        <h2>Thêm kho mới</h2>
-        <form method="POST">
-            <input type="hidden" name="action" value="them">
-            <label>Thuốc:</label>
-            <select name="ma_hang" required>
-                <option value="">-- Chọn thuốc --</option>
-                <?php while($t = $thuoc_list->fetch_assoc()){ ?>
-                    <option value="<?= $t['ma_thuoc'] ?>"><?= $t['ma_thuoc'] ?> - <?= $t['ten_thuoc'] ?></option>
-                <?php } ?>
-            </select><br><br>
-            <label>SL nhập:</label>
-            <input type="number" name="sl_nhap" required><br><br>
-            <label>SL giao:</label>
-            <input type="number" name="sl_giao" value="0" required><br><br>
-            <button type="submit" class="btn btn-primary">Thêm</button>
-        </form>
-    </div>
-</div>
+        <div class="modal-header">
+            <h3 class="modal-title">Sửa kho</h3>
+            <button class="close-btn" onclick="dongModal('modal-sua-kho')">&times;</button>
+        </div>
+        <form method="post">
+            <input type="hidden" name="suaKho" value="1">
+            <input type="hidden" name="maKho" id="suaMaKho">
 
-<!-- Modal Sửa -->
-<div id="modal-sua" class="modal hidden">
-    <div class="modal-content">
-        <span class="close" onclick="dongModal('modal-sua')">&times;</span>
-        <h2>Sửa kho</h2>
-        <form method="POST">
-            <input type="hidden" name="action" value="sua">
-            <input type="hidden" name="ma_kho" id="edit_ma_kho">
-            <label>Thuốc:</label>
-            <select name="ma_hang" id="edit_ma_hang" required>
-                <?php
-                $thuoc_list2 = $conn->query("SELECT ma_thuoc, ten_thuoc FROM thuoc ORDER BY ten_thuoc ASC");
-                while($t = $thuoc_list2->fetch_assoc()){ ?>
-                    <option value="<?= $t['ma_thuoc'] ?>"><?= $t['ma_thuoc'] ?> - <?= $t['ten_thuoc'] ?></option>
-                <?php } ?>
-            </select><br><br>
-            <label>SL nhập:</label>
-            <input type="number" name="sl_nhap" id="edit_sl_nhap" required><br><br>
-            <label>SL giao:</label>
-            <input type="number" name="sl_giao" id="edit_sl_giao" required><br><br>
-            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">SL nhập</label>
+                    <input type="number" class="form-input" name="slNhap" id="suaSlNhap" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">SL giao</label>
+                    <input type="number" class="form-input" name="slGiao" id="suaSlGiao" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Tồn kho</label>
+                <input type="number" class="form-input" id="suaTonKho" readonly>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn" onclick="dongModal('modal-sua-kho')">Hủy</button>
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
         </form>
     </div>
 </div>
 
 <script>
-function moModal(id){ document.getElementById(id).classList.remove('hidden'); }
-function dongModal(id){ document.getElementById(id).classList.add('hidden'); }
+function moModal(id){ document.getElementById(id).style.display='block'; }
+function dongModal(id){ document.getElementById(id).style.display='none'; }
 
-function suaKho(ma_kho, ma_hang, sl_nhap, sl_giao){
-    document.getElementById('edit_ma_kho').value = ma_kho;
-    document.getElementById('edit_ma_hang').value = ma_hang;
-    document.getElementById('edit_sl_nhap').value = sl_nhap;
-    document.getElementById('edit_sl_giao').value = sl_giao;
-    moModal('modal-sua');
+function suaKho(ma, slNhap, slGiao){
+    document.getElementById('suaMaKho').value = ma;
+    document.getElementById('suaSlNhap').value = slNhap;
+    document.getElementById('suaSlGiao').value = slGiao;
+    document.getElementById('suaTonKho').value = slNhap - slGiao;
+    moModal('modal-sua-kho');
 }
 
-function timKiem(){
-    let keyword = document.getElementById('searchInput').value.toLowerCase();
-    document.querySelectorAll("#khoTable tbody tr").forEach(row => {
-        let text = row.textContent.toLowerCase();
-        row.style.display = text.includes(keyword) ? "" : "none";
-    });
+// Cập nhật tồn kho tự động khi sửa
+document.getElementById('suaSlNhap').addEventListener('input', updateTonKho);
+document.getElementById('suaSlGiao').addEventListener('input', updateTonKho);
+
+function updateTonKho(){
+    let slNhap = parseInt(document.getElementById('suaSlNhap').value) || 0;
+    let slGiao = parseInt(document.getElementById('suaSlGiao').value) || 0;
+    document.getElementById('suaTonKho').value = slNhap - slGiao;
 }
 </script>
-</body>
-</html>
-
