@@ -158,5 +158,5 @@ $list = $conn->query("SELECT * FROM khachhang ORDER BY ma_khach ASC");
                 <th>Tên KH</th>
                 <th>Địa chỉ</th>
                 <th>Điện thoại</th>
-                <th>Thao tác</th>
+                
             </tr>
