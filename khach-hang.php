@@ -1,83 +1,3 @@
-</thead>
-        <tbody>
-        <?php while($r = $list->fetch_assoc()) { ?>
-            <tr>
-                <td><?= $r['ma_khach'] ?></td>
-                <td><?= $r['ten_khach_hang'] ?></td>
-                <td><?= $r['dia_chi'] ?></td>
-                <td><?= $r['dien_thoai'] ?></td>
-                <td>
-                    <button class="btn btn-info" onclick='suaKH(<?= json_encode($r, JSON_HEX_APOS|JSON_HEX_QUOT) ?>)'>Sửa</button>
-                    <form method="post" style="display:inline;" onsubmit="return confirm('Xóa khách hàng này?')">
-                        <input type="hidden" name="ma_khach" value="<?= $r['ma_khach'] ?>">
-                        <button type="submit" name="delete" class="btn btn-danger">Xóa</button>
-                    </form>
-                </td>
-            </tr>
-        <?php } ?>
-        </tbody>
-    </table>
-</div>
-
-<!-- Modal Thêm -->
-<div id="modal-them" class="modal">
-<div class="modal-header">
-<h3>Thêm khách hàng</h3>
-<button class="close-btn" onclick="dongModal('modal-them')">&times;</button>
-</div>
-<form method="post">
-    <label>Tên KH</label><br>
-    <input type="text" name="ten" required><br>
-    <label>Địa chỉ</label><br>
-    <textarea name="dia_chi" required></textarea><br>
-    <label>Điện thoại</label><br>
-    <input type="tel" name="dien_thoai" required><br><br>
-    <button type="submit" name="add" class="btn btn-primary">Thêm</button>
-    <button type="button" class="btn" onclick="dongModal('modal-them')">Hủy</button>
-</form>
-</div>
-
-<!-- Modal Sửa -->
-<div id="modal-sua" class="modal">
-<div class="modal-header">
-<h3>Sửa khách hàng</h3>
-<button class="close-btn" onclick="dongModal('modal-sua')">&times;</button>
-</div>
-<form method="post">
-    <input type="hidden" name="ma_khach" id="edit_ma_khach">
-    <label>Tên KH</label><br>
-    <input type="text" name="ten" id="edit_ten" required><br>
-    <label>Địa chỉ</label><br>
-    <textarea name="dia_chi" id="edit_dia_chi" required></textarea><br>
-    <label>Điện thoại</label><br>
-    <input type="tel" name="dien_thoai" id="edit_dien_thoai" required><br><br>
-    <button type="submit" name="edit" class="btn btn-primary">Cập nhật</button>
-    <button type="button" class="btn" onclick="dongModal('modal-sua')">Hủy</button>
-</form>
-</div>
-
-<script>
-function moModal(id){ $('#'+id).show(); }
-function dongModal(id){ $('#'+id).hide(); }
-
-function suaKH(r){
-    $('#edit_ma_khach').val(r.ma_khach);
-    $('#edit_ten').val(r.ten_khach_hang);
-    $('#edit_dia_chi').val(r.dia_chi);
-    $('#edit_dien_thoai').val(r.dien_thoai);
-    moModal('modal-sua');
-}
-
-// Tìm kiếm trực tiếp
-function timKiem(value){
-    value = value.toLowerCase();
-    $('#table-kh tbody tr').each(function(){
-        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-    });
-}
-</script>
-</body>
-</html>
 <?php
 include("connect.php");
 $conn->set_charset("utf8");
@@ -158,5 +78,85 @@ $list = $conn->query("SELECT * FROM khachhang ORDER BY ma_khach ASC");
                 <th>Tên KH</th>
                 <th>Địa chỉ</th>
                 <th>Điện thoại</th>
-                
+                <th>Thao tác</th>
             </tr>
+        </thead>
+        <tbody>
+        <?php while($r = $list->fetch_assoc()) { ?>
+            <tr>
+                <td><?= $r['ma_khach'] ?></td>
+                <td><?= $r['ten_khach_hang'] ?></td>
+                <td><?= $r['dia_chi'] ?></td>
+                <td><?= $r['dien_thoai'] ?></td>
+                <td>
+                    <button class="btn btn-info" onclick='suaKH(<?= json_encode($r, JSON_HEX_APOS|JSON_HEX_QUOT) ?>)'>Sửa</button>
+                    <form method="post" style="display:inline;" onsubmit="return confirm('Xóa khách hàng này?')">
+                        <input type="hidden" name="ma_khach" value="<?= $r['ma_khach'] ?>">
+                        <button type="submit" name="delete" class="btn btn-danger">Xóa</button>
+                    </form>
+                </td>
+            </tr>
+        <?php } ?>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal Thêm -->
+<div id="modal-them" class="modal">
+<div class="modal-header">
+<h3>Thêm khách hàng</h3>
+<button class="close-btn" onclick="dongModal('modal-them')">&times;</button>
+</div>
+<form method="post">
+    <label>Tên KH</label><br>
+    <input type="text" name="ten" required><br>
+    <label>Địa chỉ</label><br>
+    <textarea name="dia_chi" required></textarea><br>
+    <label>Điện thoại</label><br>
+    <input type="tel" name="dien_thoai" required><br><br>
+    <button type="submit" name="add" class="btn btn-primary">Thêm</button>
+    <button type="button" class="btn" onclick="dongModal('modal-them')">Hủy</button>
+</form>
+</div>
+
+<!-- Modal Sửa -->
+<div id="modal-sua" class="modal">
+<div class="modal-header">
+<h3>Sửa khách hàng</h3>
+<button class="close-btn" onclick="dongModal('modal-sua')">&times;</button>
+</div>
+<form method="post">
+    <input type="hidden" name="ma_khach" id="edit_ma_khach">
+    <label>Tên KH</label><br>
+    <input type="text" name="ten" id="edit_ten" required><br>
+    <label>Địa chỉ</label><br>
+    <textarea name="dia_chi" id="edit_dia_chi" required></textarea><br>
+    <label>Điện thoại</label><br>
+    <input type="tel" name="dien_thoai" id="edit_dien_thoai" required><br><br>
+    <button type="submit" name="edit" class="btn btn-primary">Cập nhật</button>
+    <button type="button" class="btn" onclick="dongModal('modal-sua')">Hủy</button>
+</form>
+</div>
+
+<script>
+function moModal(id){ $('#'+id).show(); }
+function dongModal(id){ $('#'+id).hide(); }
+
+function suaKH(r){
+    $('#edit_ma_khach').val(r.ma_khach);
+    $('#edit_ten').val(r.ten_khach_hang);
+    $('#edit_dia_chi').val(r.dia_chi);
+    $('#edit_dien_thoai').val(r.dien_thoai);
+    moModal('modal-sua');
+}
+
+// Tìm kiếm trực tiếp
+function timKiem(value){
+    value = value.toLowerCase();
+    $('#table-kh tbody tr').each(function(){
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+    });
+}
+</script>
+</body>
+</html>
