@@ -39,8 +39,16 @@ $sql = "SELECT k.ma_kho, t.ten_thuoc, k.sl_nhap, k.sl_giao, k.ton_kho
         WHERE t.ten_thuoc LIKE '%$keyword%' OR k.ma_kho LIKE '%$keyword%'";
 $result = $conn->query($sql);
 ?>
-
-<!-- Quản lý kho -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý kho</title>
+    <link rel="stylesheet" href="css/quanly.css">
+</head>
+<body>
+    <!-- Quản lý kho -->
 <div id="quan-ly-kho" class="page">
     <div class="page-header">
         <h1 class="page-title">Quản lý kho</h1>
@@ -77,8 +85,8 @@ $result = $conn->query($sql);
                     <td><?php echo $row['sl_giao']; ?></td>
                     <td><?php echo $row['ton_kho']; ?></td>
                     <td>
-                        <button class="btn btn-info btn-sm" onclick="suaKho('<?php echo $row['ma_kho']; ?>','<?php echo $row['sl_nhap']; ?>','<?php echo $row['sl_giao']; ?>')">✏️ Sửa</button>
-                        <a href="quan-ly-kho.php?delete=<?php echo $row['ma_kho']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Xoá kho này?')">🗑️ Xóa</a>
+                        <button class="btn btn-info btn-sm" onclick="suaKho('<?php echo $row['ma_kho']; ?>','<?php echo $row['sl_nhap']; ?>','<?php echo $row['sl_giao']; ?>')"> Sửa</button>
+                        <a href="quan-ly-kho.php?delete=<?php echo $row['ma_kho']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Xoá kho này?')"> Xóa</a>
                     </td>
                 </tr>
                 <?php endwhile; ?>
@@ -88,7 +96,7 @@ $result = $conn->query($sql);
 </div>
 
 <!-- Modal sửa kho -->
-<div id="modal-sua-kho" class="modal" style="display:none;">
+<div id="modal-sua-kho" class="modal" >
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title">Sửa kho</h3>
@@ -144,3 +152,5 @@ function updateTonKho(){
     document.getElementById('suaTonKho').value = slNhap - slGiao;
 }
 </script>
+</body>
+</html>
