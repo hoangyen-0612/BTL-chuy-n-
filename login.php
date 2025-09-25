@@ -51,7 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
                 $stmt->bind_param("ss", $username, $hash);
                 if ($stmt->execute()) {
-                    // Thông báo thành công, chuyển form về đăng nhập
                     $success = "Đăng ký thành công! Vui lòng đăng nhập.";
                 } else {
                     $error = "Có lỗi xảy ra, vui lòng thử lại!";
