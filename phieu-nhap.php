@@ -1,11 +1,6 @@
 <?php
-// ================== KẾT NỐI ================== //
 include("connect.php");
 $conn->set_charset("utf8");
-
-// ================== XỬ LÝ FORM ================== //
-
-// Thêm phiếu nhập
 if (isset($_POST['add'])) {
     $ma_thuoc  = $_POST['ma_thuoc'];
     $ma_nha_cung_cap    = $_POST['ma_nha_cung_cap'];
