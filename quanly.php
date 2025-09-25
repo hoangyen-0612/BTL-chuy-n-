@@ -76,6 +76,7 @@ $currentPage = isset($_GET['page']) ? $_GET['page'] : 'quanly.php?page=trang-chu
             <a class="<?php echo $currentPage=='trang-chu'?'active':''?>" href="quanly.php?page=trang-chu">Trang chủ</a>
             <a class="<?php echo $currentPage=='quan-ly-thuoc'?'active':''?>" href="quanly.php?page=quan-ly-thuoc">Quản lý thuốc</a>
             <a class="<?php echo $currentPage=='quan-ly-kho'?'active':''?>" href="quanly.php?page=quan-ly-kho">Quản lý kho</a>
+           <a class="<?php echo $currentPage=='quan-ly-dm'?'active':''?>" href="quanly.php?page=quan-ly-dm">Quản lý danh mục</a>
         </div>
         <div class="menu-title">Giao dịch</div>
         <div class="menu-group">
@@ -99,6 +100,7 @@ $currentPage = isset($_GET['page']) ? $_GET['page'] : 'quanly.php?page=trang-chu
                 case "trang-chu": include("trang-chu.php"); break;
                 case "quan-ly-thuoc": include("quan-ly-thuoc.php"); break;
                 case "quan-ly-kho": include("quan-ly-kho.php"); break;
+                case "quan-ly-dm": include("quan-ly-dm.php"); break;
                 case "phieu-nhap": include("phieu-nhap.php"); break;
                 case "hoa-don": include("hoa-don.php"); break;
                 case "nha-cung-cap": include("nha-cung-cap.php"); break;
