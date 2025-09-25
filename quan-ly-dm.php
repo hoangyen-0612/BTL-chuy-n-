@@ -70,4 +70,67 @@ if ($keyword !== '') {
 $sql .= " ORDER BY CAST(SUBSTRING(ma_danh_muc,3) AS UNSIGNED) ASC";
 $list = $conn->query($sql);
 ?>
+$sql .= " ORDER BY CAST(SUBSTRING(ma_danh_muc,3) AS UNSIGNED) ASC";
+$list = $conn->query($sql);
+?>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Quản lý danh mục thuốc</title>
+<link rel="stylesheet" href="css.css">
+</style>
+</head>
+<body>
+<div class="page-header">
+    <h1 class="page-title">Quản lý danh mục thuốc</h1>
+    <p class="page-subtitle">Danh sách và thông tin chi tiết danh mục thuốc</p>
+</div>
 
+<div class="table-container">
+    <div class="table-header">
+        <div class="search-filters">
+            <form method="get">
+                <input type="text" class="search-input" name="search"
+                       placeholder="Tìm kiếm danh mục..."
+                       value="<?php echo htmlspecialchars($keyword); ?>">
+            </form>
+        </div>
+        <button class="btn btn-primary" onclick="moModal('modal-them')">Thêm danh mục</button>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Mã</th>
+                <th>Tên danh mục</th>
+                <th>Mô tả</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php while($row = $list->fetch_assoc()): ?>
+            <tr>
+                <td><?php echo $row['ma_danh_muc']; ?></td>
+                <td><?php echo htmlspecialchars($row['ten_danh_muc']); ?></td>
+                <td><?php echo htmlspecialchars($row['mo_ta']); ?></td>
+                <td>
+                    <button class="btn btn-info btn-sm"
+                        onclick="suaDM(
+                            '<?php echo $row['ma_danh_muc']; ?>',
+                            '<?php echo htmlspecialchars($row['ten_danh_muc'], ENT_QUOTES); ?>',
+                            '<?php echo htmlspecialchars($row['mo_ta'], ENT_QUOTES); ?>'
+                        )">Sửa</button>
+
+                    <form method="post" style="display:inline"
+                          onsubmit="return confirm('Xóa danh mục này?')">
+                        <input type="hidden" name="delete_ma_danh_muc"
+                               value="<?php echo htmlspecialchars($row['ma_danh_muc'], ENT_QUOTES); ?>">
+                        <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                    </form>
+                </td>
+            </tr>
+        <?php endwhile; ?>
+        </tbody>
+    </table>
+</div>
