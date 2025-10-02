@@ -108,7 +108,7 @@ $thuoc_list = $conn->query("SELECT * FROM thuoc ORDER BY ma_thuoc ASC");
                 <td><?= $thuoc['nha_san_xuat'] ?></td>
                 <td><?= $thuoc['don_vi_tinh'] ?></td>
                 <td><?= number_format($thuoc['gia_ban'],0,',','.') ?> đ</td>
-                <td><?= $thuoc['han_su_dung'] ?></td>
+               <td><?=  date("d-m-Y", strtotime($thuoc['han_su_dung'])) ?></td>
                 <td><?= $thuoc['hoat_chat'] ?></td>
                 <td>
                     <button class="btn btn-info btn-sm" 
