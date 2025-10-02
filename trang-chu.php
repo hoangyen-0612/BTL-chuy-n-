@@ -132,7 +132,7 @@ $loi_nhuan = $tong_doanh_thu - $tong_chi;
                     <td><?= $thuoc['nha_san_xuat'] ?></td>
                     <td><?= $thuoc['don_vi_tinh'] ?? '-' ?></td>
                     <td><?= number_format($thuoc['gia_ban'],0,',','.') ?> đ</td>
-                    <td style="color:red; font-weight:bold;"><?= $thuoc['han_su_dung'] ?></td>
+                    <td><?=  date("d-m-Y", strtotime($thuoc['han_su_dung'])) ?></td>
                     <td><?= $thuoc['hoat_chat'] ?></td>
                 </tr>
             <?php } 
