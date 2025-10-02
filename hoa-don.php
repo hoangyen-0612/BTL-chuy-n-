@@ -266,7 +266,7 @@ $result = $conn->query("SELECT h.*, t.ten_thuoc, n.ten_nhan_vien
             <?php while($row=$result->fetch_assoc()): ?>
                 <tr>
                     <td><?= htmlspecialchars($row['so_hd']) ?></td>
-                    <td><?= htmlspecialchars($row['ngay_ban']) ?></td>
+                    <td><?= date("d-m-Y", strtotime($row['ngay_ban'])) ?></td>
                     <td><?= htmlspecialchars($row['ten_khach']) ?></td>
                     <td><?= htmlspecialchars($row['ten_thuoc']) ?></td>
                     <td><?= htmlspecialchars($row['so_luong_ban']) ?></td>
