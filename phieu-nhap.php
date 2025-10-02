@@ -138,7 +138,7 @@ $nv_list  = $conn->query("SELECT ma_nhan_vien, ten_nhan_vien  FROM nhanvien   OR
         <?php while($r = $list->fetch_assoc()) { ?>
             <tr>
                 <td><?= $r['so_pn'] ?></td>
-                <td><?= $r['ngay_nhap'] ?></td>
+              <td><?=  date("d-m-Y", strtotime($r['ngay_nhap'])) ?></td>
                 <td><?= $r['ten_thuoc'] ?></td>
                 <td><?= $r['ten_danh_muc'] ?></td>
                 <td><?= $r['ten_nha_cung_cap'] ?></td>
