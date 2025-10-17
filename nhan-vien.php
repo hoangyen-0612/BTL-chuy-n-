@@ -50,19 +50,6 @@ $list = $conn->query("SELECT * FROM nhanvien ORDER BY ma_nhan_vien ASC");
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quản lý nhân viên</title>
 <link rel="stylesheet" href="css.css">
-<style>
-.modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-background:#fff;padding:20px;width:420px;z-index:1000;box-shadow:0 4px 10px rgba(0,0,0,.3);}
-.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.close-btn{background:none;border:none;font-size:20px;cursor:pointer;}
-.btn{padding:5px 10px;cursor:pointer;margin:2px;}
-.btn-primary{background:#4CAF50;color:#fff;border:none;}
-.btn-danger{background:#f44336;color:#fff;border:none;}
-.btn-info{background:#2196F3;color:#fff;border:none;}
-.search-input{padding:5px;width:220px;}
-table{width:100%;border-collapse:collapse;margin-top:15px;}
-th,td{border:1px solid #ccc;padding:6px;text-align:left;}
-</style>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
