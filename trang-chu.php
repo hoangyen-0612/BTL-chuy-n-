@@ -34,6 +34,16 @@ $sql_expire = "SELECT *
                ORDER BY han_su_dung ASC";
 $result_expire = $conn->query($sql_expire);
 $sap_het_han = $result_expire->num_rows;
+// Tổng chi (tất cả phiếu nhập)
+$sql_chi = "SELECT SUM(so_luong_nhap * gia_nhap) AS tong_chi FROM phieunhap";
+$tong_chi = $conn->query($sql_chi)->fetch_assoc()['tong_chi'] ?? 0;
+
+// Doanh thu (tổng tiền bán)
+$sql_dt = "SELECT SUM(thanh_tien_ban) AS tong_doanh_thu FROM hoadon";
+$tong_doanh_thu = $conn->query($sql_dt)->fetch_assoc()['tong_doanh_thu'] ?? 0;
+
+// Lợi nhuận = Doanh thu - Chi
+$loi_nhuan = $tong_doanh_thu - $tong_chi;
 ?>
 
 <div class="page-header">
@@ -44,7 +54,6 @@ $sap_het_han = $result_expire->num_rows;
 <div class="stats-grid">
     <div class="stat-card blue">
         <div class="stat-content">
-            <div class="stat-icon blue">💊</div>
             <div class="stat-info">
                 <h3>Tổng số thuốc</h3>
                 <p><?= $tong_thuoc ?></p>
@@ -53,7 +62,6 @@ $sap_het_han = $result_expire->num_rows;
     </div>
     <div class="stat-card green">
         <div class="stat-content">
-            <div class="stat-icon green">📦</div>
             <div class="stat-info">
                 <h3>Tồn kho</h3>
                 <p><?= $tongTon ?></p>
@@ -62,7 +70,6 @@ $sap_het_han = $result_expire->num_rows;
     </div>
     <div class="stat-card red">
         <div class="stat-content">
-            <div class="stat-icon red">🧾</div>
             <div class="stat-info">
                 <h3>Hóa đơn hôm nay</h3>
                 <p><?= $hoa_don_hom_nay ?></p>
@@ -71,19 +78,40 @@ $sap_het_han = $result_expire->num_rows;
     </div>
     <div class="stat-card yellow">
         <div class="stat-content">
-            <div class="stat-icon yellow">⚠️</div>
             <div class="stat-info">
                 <h3>Sắp hết hạn</h3>
                 <p><?= $sap_het_han ?></p>
             </div>
         </div>
     </div>
+    <div class="stat-card purple">
+        <div class="stat-content">
+            <div class="stat-info">
+                <h3>Tổng chi (nhập hàng)</h3>
+                <p><?= number_format($tong_chi,0,',','.') ?> đ</p>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card teal">
+        <div class="stat-content">
+            <div class="stat-info">
+                <h3>Doanh thu</h3>
+                <p><?= number_format($tong_doanh_thu,0,',','.') ?> đ</p>
+            </div>
+        </div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-content">
+            <div class="stat-info">
+                <h3>Lợi nhuận</h3>
+                <p><?= number_format($loi_nhuan,0,',','.') ?> đ</p>
+            </div>
+        </div>
+    </div>
 </div>
-
-<!-- Bảng thuốc sắp hết hạn -->
 <div class="table-container">
-    <h2>⚠️ Danh sách thuốc sắp hết hạn (dưới 30 ngày)</h2>
-    <table border="1" width="100%" cellspacing="0" cellpadding="5">
+    <h2> Danh sách thuốc sắp hết hạn (dưới 30 ngày)</h2>
+    <table border="0" width="100%" cellspacing="0" cellpadding="5">
         <thead>
             <tr>
                 <th>Mã thuốc</th>
@@ -104,13 +132,13 @@ $sap_het_han = $result_expire->num_rows;
                     <td><?= $thuoc['nha_san_xuat'] ?></td>
                     <td><?= $thuoc['don_vi_tinh'] ?? '-' ?></td>
                     <td><?= number_format($thuoc['gia_ban'],0,',','.') ?> đ</td>
-                    <td style="color:red; font-weight:bold;"><?= $thuoc['han_su_dung'] ?></td>
+                    <td><?=  date("d-m-Y", strtotime($thuoc['han_su_dung'])) ?></td>
                     <td><?= $thuoc['hoat_chat'] ?></td>
                 </tr>
             <?php } 
             } else { ?>
                 <tr>
-                    <td colspan="7" style="text-align:center;">✅ Không có thuốc nào sắp hết hạn</td>
+                    <td colspan="7" style="text-align:center;">Không có thuốc nào sắp hết hạn</td>
                 </tr>
             <?php } ?>
         </tbody>
@@ -119,4 +147,3 @@ $sap_het_han = $result_expire->num_rows;
 
 </body>
 </html>
-
