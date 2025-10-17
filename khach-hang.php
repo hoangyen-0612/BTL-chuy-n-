@@ -48,18 +48,6 @@ $list = $conn->query("SELECT * FROM khachhang ORDER BY ma_khach ASC");
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quản lý Khách hàng</title>
 <link rel="stylesheet" href="css.css">
-<style>
-.modal { display:none; position: fixed; top:50%; left:50%; transform: translate(-50%, -50%); background:#fff; padding:20px; border:1px solid #333; z-index:1000; width:400px; box-shadow:0 4px 10px rgba(0,0,0,0.2); }
-.modal-header { display:flex; justify-content:space-between; align-items:center; }
-.modal-header h3 { margin:0; }
-.close-btn { background:none; border:none; font-size:20px; cursor:pointer; }
-.table-container { margin-top:20px; }
-.search-input { padding:5px; width:200px; }
-.btn { padding:5px 10px; cursor:pointer; margin:2px; }
-.btn-primary { background:#4CAF50; color:white; border:none; }
-.btn-danger { background:#f44336; color:white; border:none; }
-.btn-info { background:#2196F3; color:white; border:none; }
-</style>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
