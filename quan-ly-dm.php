@@ -1,5 +1,6 @@
 <?php
 include 'connect.php';
+
 /* ====== THÊM MỚI ====== */
 if (isset($_POST['addDanhMuc'])) {
     $ten  = trim($_POST['ten_danh_muc']);
@@ -48,6 +49,7 @@ if (isset($_POST['editDanhMuc'])) {
     header("Location: quanly.php?page=quan-ly-dm");
     exit;
 }
+
 /* ====== XÓA ====== */
 if (isset($_POST['delete_ma_danh_muc'])) {
     $id = $_POST['delete_ma_danh_muc'];
@@ -70,6 +72,7 @@ if ($keyword !== '') {
 $sql .= " ORDER BY CAST(SUBSTRING(ma_danh_muc,3) AS UNSIGNED) ASC";
 $list = $conn->query($sql);
 ?>
+
 $sql .= " ORDER BY CAST(SUBSTRING(ma_danh_muc,3) AS UNSIGNED) ASC";
 $list = $conn->query($sql);
 ?>
@@ -183,3 +186,4 @@ function suaDM(id,ten,mota){
 </script>
 </body>
 </html>
+>>>>>>> 843bff9a77aea5614e0a9163d1297bcfcfcf9cf4
